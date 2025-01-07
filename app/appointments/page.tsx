@@ -1,0 +1,111 @@
+'use client'
+
+import { useState } from 'react'
+import { useAppContext } from '../contexts/AppContext'
+import { useAuth } from '../contexts/AuthContext'
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Plus, Clock } from 'lucide-react'
+
+export default function AppointmentsPage() {
+  const { appointments, patients, addAppointment, getPatientsForDoctor } = useAppContext()
+  const { user } = useAuth()
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+
+  const myPatients = user?.role === 'doctor' ? getPatientsForDoctor(user.id) : patients
+
+  const filteredAppointments = appointments.filter(
+    appointment => {
+      const isCorrectDate = appointment.date === selectedDate?.toISOString().split('T')[0]
+      const isAssignedPatient = user?.role === 'admin' || myPatients.some(p => p.id === appointment.patientId)
+      return isCorrectDate && isAssignedPatient
+    }
+  )
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Appointments</h1>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> New Appointment
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Appointment</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              const formData = new FormData(e.currentTarget)
+              addAppointment({
+                patientId: Number(formData.get('patientId')),
+                date: (formData.get('date') as string).split('T')[0],
+                time: formData.get('time') as string,
+                type: formData.get('type') as string
+              })
+            }}>
+              <div className="grid gap-4 py-4">
+                <Select name="patientId" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select patient" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {myPatients.map(patient => (
+                      <SelectItem key={patient.id} value={patient.id.toString()}>{patient.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <input type="date" name="date" required className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" />
+                <input type="time" name="time" required className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" />
+                <input type="text" name="type" placeholder="Appointment Type" required className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" />
+              </div>
+              <Button type="submit">Add Appointment</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Calendar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Calendar 
+              mode="single" 
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              className="rounded-md border" 
+            />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Appointments for {selectedDate?.toDateString()}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-4">
+              {filteredAppointments.map((appointment) => {
+                const patient = myPatients.find(p => p.id === appointment.patientId)
+                return (
+                  <li key={appointment.id} className="flex items-center space-x-4">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{patient?.name}</p>
+                      <p className="text-sm text-muted-foreground">{appointment.time} - {appointment.type}</p>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
