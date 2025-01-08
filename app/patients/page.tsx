@@ -10,7 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { UserPlus, Search, Plus, Trash, Edit, Paperclip, Calendar, FileText, Bell } from 'lucide-react'
+import { UserPlus, Search, Plus, Trash, Edit, Paperclip, Calendar, FileText, Bell, Printer } from 'lucide-react'
+import { AddHistoryEntry } from '../components/AddHistoryEntry'
+import { AddPrescription } from '../components/AddPrescription'
 
 export default function PatientsPage() {
   const { 
@@ -44,6 +46,49 @@ export default function PatientsPage() {
     }
     return false
   })
+
+  const handleAddHistoryEntry = (entry: { date: string; description: string; attachments: File[] }) => {
+    if (selectedPatient) {
+      addHistoryEntry({
+        patientId: selectedPatient.id,
+        date: entry.date,
+        description: entry.description,
+        attachments: entry.attachments.map(file => URL.createObjectURL(file))
+      })
+    }
+  }
+
+  const handleAddPrescription = (prescription: { date: string; medication: string; dosage: string; instructions: string; renewalDate: string }) => {
+    if (selectedPatient) {
+      addPrescription({
+        patientId: selectedPatient.id,
+        ...prescription
+      })
+    }
+  }
+
+  const printPrescription = (prescription: typeof prescriptions[0]) => {
+    const patient = patients.find(p => p.id === prescription.patientId)
+    const doctor = doctors.find(d => d.id === patient?.assignedDoctorId)
+    
+    const prescriptionContent = `
+      <h1>Prescription</h1>
+      <p><strong>Patient:</strong> ${patient?.name}</p>
+      <p><strong>Doctor:</strong> ${doctor?.name}</p>
+      <p><strong>Date:</strong> ${prescription.date}</p>
+      <p><strong>Medication:</strong> ${prescription.medication}</p>
+      <p><strong>Dosage:</strong> ${prescription.dosage}</p>
+      <p><strong>Instructions:</strong> ${prescription.instructions}</p>
+      <p><strong>Renewal Date:</strong> ${prescription.renewalDate}</p>
+    `
+
+    const printWindow = window.open('', '_blank')
+    printWindow?.document.write('<html><head><title>Prescription</title></head><body>')
+    printWindow?.document.write(prescriptionContent)
+    printWindow?.document.write('</body></html>')
+    printWindow?.document.close()
+    printWindow?.print()
+  }
 
   return (
     <div className="space-y-6">
@@ -145,24 +190,24 @@ export default function PatientsPage() {
       </Table>
       {selectedPatient && (
         <Dialog open={!!selectedPatient} onOpenChange={() => setSelectedPatient(null)}>
-          <DialogContent className="max-w-4xl w-3/4 h-3/4">
-            <DialogHeader>
-              <DialogTitle>Patient Details</DialogTitle>
-            </DialogHeader>
-            <Tabs defaultValue="details" className="h-full">
-              <TabsList>
+          <DialogContent className="max-w-4xl w-3/4 h-3/4 flex flex-col overflow-hidden">
+            <Tabs defaultValue="details" className="flex-grow flex flex-col overflow-hidden">
+              <TabsList className="mb-4">
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
                 <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
                 <TabsTrigger value="timeline">Timeline</TabsTrigger>
                 <TabsTrigger value="notifications">Notifications</TabsTrigger>
               </TabsList>
-              <TabsContent value="details" className="h-full overflow-auto">
-                <Card>
+              <DialogHeader>
+                <DialogTitle>Patient Details</DialogTitle>
+              </DialogHeader>
+              <TabsContent value="details" className="flex-grow overflow-auto h-full">
+                <Card className="h-full">
                   <CardHeader>
                     <CardTitle>{selectedPatient.name}</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="overflow-auto">
                     <p><strong>Email:</strong> {selectedPatient.email}</p>
                     <p><strong>Phone:</strong> {selectedPatient.phone}</p>
                     <p><strong>Last Visit:</strong> {selectedPatient.lastVisit}</p>
@@ -170,13 +215,14 @@ export default function PatientsPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
-              <TabsContent value="history" className="h-full overflow-auto">
-                <Card>
+              <TabsContent value="history" className="flex-grow overflow-auto h-full">
+                <Card className="h-full">
                   <CardHeader>
                     <CardTitle>Medical History</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-4">
+                  <CardContent className="overflow-auto">
+                    <AddHistoryEntry patientId={selectedPatient.id} onAdd={handleAddHistoryEntry} />
+                    <ul className="space-y-4 mt-4">
                       {history
                         .filter(entry => entry.patientId === selectedPatient.id)
                         .map(entry => (
@@ -195,13 +241,14 @@ export default function PatientsPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
-              <TabsContent value="prescriptions" className="h-full overflow-auto">
-                <Card>
+              <TabsContent value="prescriptions" className="flex-grow overflow-auto h-full">
+                <Card className="h-full">
                   <CardHeader>
                     <CardTitle>Prescriptions</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-4">
+                  <CardContent className="overflow-auto">
+                    <AddPrescription patientId={selectedPatient.id} onAdd={handleAddPrescription} />
+                    <ul className="space-y-4 mt-4">
                       {prescriptions
                         .filter(prescription => prescription.patientId === selectedPatient.id)
                         .map(prescription => (
@@ -211,18 +258,21 @@ export default function PatientsPage() {
                             <p><strong>Dosage:</strong> {prescription.dosage}</p>
                             <p><strong>Instructions:</strong> {prescription.instructions}</p>
                             <p><strong>Renewal Date:</strong> {prescription.renewalDate}</p>
+                            <Button onClick={() => printPrescription(prescription)} className="mt-2">
+                              <Printer className="h-4 w-4 mr-2" /> Print Prescription
+                            </Button>
                           </li>
                         ))}
                     </ul>
                   </CardContent>
                 </Card>
               </TabsContent>
-              <TabsContent value="timeline" className="h-full overflow-auto">
-                <Card>
+              <TabsContent value="timeline" className="flex-grow overflow-auto h-full">
+                <Card className="h-full">
                   <CardHeader>
                     <CardTitle>Patient Timeline</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="overflow-auto">
                     <ul className="space-y-4">
                       {[...history, ...prescriptions]
                         .filter(item => 'patientId' in item && item.patientId === selectedPatient.id)
@@ -252,12 +302,12 @@ export default function PatientsPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
-              <TabsContent value="notifications" className="h-full overflow-auto">
-                <Card>
+              <TabsContent value="notifications" className="flex-grow overflow-auto h-full">
+                <Card className="h-full">
                   <CardHeader>
                     <CardTitle>Notifications</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="overflow-auto">
                     <ul className="space-y-4">
                       {notifications
                         .filter(notification => notification.patientId === selectedPatient.id)
