@@ -15,6 +15,7 @@ export default function BillingPage() {
   const { invoices, patients, addInvoice, getPatientsForDoctor } = useAppContext()
   const { user } = useAuth()
   const [selectedInvoice, setSelectedInvoice] = useState<typeof invoices[0] | null>(null)
+  const [createInvoiceDialogOpen, setCreateInvoiceDialogOpen] = useState(false)
 
   const myPatients = user?.role === 'doctor' ? getPatientsForDoctor(user.id) : patients
   const myInvoices = invoices.filter(invoice => myPatients.some(p => p.id === invoice.patientId))
@@ -28,7 +29,7 @@ export default function BillingPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Billing</h1>
         {user?.role === 'admin' && (
-          <Dialog>
+          <Dialog open={createInvoiceDialogOpen} onOpenChange={setCreateInvoiceDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <FileText className="mr-2 h-4 w-4" /> Create Invoice
@@ -38,15 +39,16 @@ export default function BillingPage() {
               <DialogHeader>
                 <DialogTitle>Create New Invoice</DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => {
+              <form onSubmit={async (e) => {
                 e.preventDefault()
                 const formData = new FormData(e.currentTarget)
-                addInvoice({
+                await addInvoice({
                   patientId: Number(formData.get('patientId')),
                   date: new Date().toISOString().split('T')[0],
                   amount: `$${formData.get('amount')}`,
                   status: formData.get('status') as 'Paid' | 'Pending' | 'Overdue'
                 })
+                setCreateInvoiceDialogOpen(false)
               }}>
                 <div className="grid gap-4 py-4">
                   <Select name="patientId" required>

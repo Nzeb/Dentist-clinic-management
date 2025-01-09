@@ -5,10 +5,14 @@ import React, { createContext, useContext, useState, ReactNode } from 'react'
 interface Patient {
   id: number
   name: string
-  email: string
+  age?: number
+  sex?: string
+  address?: string
   phone: string
+  email?: string
   lastVisit: string
   assignedDoctorId: number | null
+  specialNotes: string
 }
 
 interface Appointment {
@@ -95,9 +99,18 @@ const AppContext = createContext<AppContextType | undefined>(undefined)
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [patients, setPatients] = useState<Patient[]>([
-    { id: 1, name: "John Doe", email: "john@example.com", phone: "123-456-7890", lastVisit: "2023-05-15", assignedDoctorId: 1 },
-    { id: 2, name: "Jane Smith", email: "jane@example.com", phone: "098-765-4321", lastVisit: "2023-05-10", assignedDoctorId: 1 },
-    { id: 3, name: "Alice Johnson", email: "alice@example.com", phone: "555-555-5555", lastVisit: "2023-05-05", assignedDoctorId: null },
+    {
+      id: 1, name: "John Doe", email: "john@example.com", phone: "123-456-7890", lastVisit: "2023-05-15", assignedDoctorId: 1,
+      specialNotes: ''
+    },
+    {
+      id: 2, name: "Jane Smith", email: "jane@example.com", phone: "098-765-4321", lastVisit: "2023-05-10", assignedDoctorId: 1,
+      specialNotes: ''
+    },
+    {
+      id: 3, name: "Alice Johnson", email: "alice@example.com", phone: "555-555-5555", lastVisit: "2023-05-05", assignedDoctorId: null,
+      specialNotes: ''
+    },
   ])
 
   const [appointments, setAppointments] = useState<Appointment[]>([

@@ -14,6 +14,7 @@ export default function AppointmentsPage() {
   const { appointments, patients, addAppointment, getPatientsForDoctor } = useAppContext()
   const { user } = useAuth()
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const [addAppointmentDialogOpen, setAddAppointmentDialogOpen] = useState(false)
 
   const myPatients = user?.role === 'doctor' ? getPatientsForDoctor(user.id) : patients
 
@@ -29,7 +30,7 @@ export default function AppointmentsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Appointments</h1>
-        <Dialog>
+        <Dialog open={addAppointmentDialogOpen} onOpenChange={setAddAppointmentDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" /> New Appointment
@@ -39,15 +40,16 @@ export default function AppointmentsPage() {
             <DialogHeader>
               <DialogTitle>Add New Appointment</DialogTitle>
             </DialogHeader>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault()
               const formData = new FormData(e.currentTarget)
-              addAppointment({
+              await addAppointment({
                 patientId: Number(formData.get('patientId')),
                 date: (formData.get('date') as string).split('T')[0],
                 time: formData.get('time') as string,
                 type: formData.get('type') as string
               })
+              setAddAppointmentDialogOpen(false)
             }}>
               <div className="grid gap-4 py-4">
                 <Select name="patientId" required>

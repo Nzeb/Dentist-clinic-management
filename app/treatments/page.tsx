@@ -14,6 +14,7 @@ export default function TreatmentsPage() {
   const { treatments, addTreatment, patients, getPatientsForDoctor } = useAppContext()
   const { user } = useAuth()
   const [selectedTreatment, setSelectedTreatment] = useState<typeof treatments[0] | null>(null)
+  const [addTreatmentDialogOpen, setAddTreatmentDialogOpen] = useState(false)
 
   const myPatients = user?.role === 'doctor' ? getPatientsForDoctor(user.id) : patients
 
@@ -22,7 +23,7 @@ export default function TreatmentsPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Treatments</h1>
         {user?.role === 'admin' && (
-          <Dialog>
+          <Dialog open={addTreatmentDialogOpen} onOpenChange={setAddTreatmentDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <FilePlus className="mr-2 h-4 w-4" /> Add Treatment
@@ -32,14 +33,15 @@ export default function TreatmentsPage() {
               <DialogHeader>
                 <DialogTitle>Add New Treatment</DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => {
+              <form onSubmit={async (e) => {
                 e.preventDefault()
                 const formData = new FormData(e.currentTarget)
-                addTreatment({
+                await addTreatment({
                   name: formData.get('name') as string,
                   duration: formData.get('duration') as string,
                   price: formData.get('price') as string
                 })
+                setAddTreatmentDialogOpen(false)
               }}>
                 <div className="grid gap-4 py-4">
                   <Input id="name" name="name" placeholder="Treatment Name" required />

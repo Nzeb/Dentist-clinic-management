@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { UserPlus, Search, Plus, Trash, Edit, Paperclip, Calendar, FileText, Bell, Printer } from 'lucide-react'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { UserPlus, Search, Plus, Trash, Edit, Paperclip, Calendar, FileText, Bell, Printer, ChevronDown } from 'lucide-react'
 import { AddHistoryEntry } from '../components/AddHistoryEntry'
 import { AddPrescription } from '../components/AddPrescription'
+import { SpecialNotes } from '../components/SpecialNotes'
+import { Label } from "@/components/ui/label"
 
 export default function PatientsPage() {
   const { 
@@ -25,10 +28,11 @@ export default function PatientsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<typeof patients[0] | null>(null)
   const [filterCriteria, setFilterCriteria] = useState<'all' | 'recent' | 'overdue'>('all')
+  const [addPatientDialogOpen, setAddPatientDialogOpen] = useState(false)
 
   const filteredPatients = patients.filter(patient => {
     const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.phone.includes(searchTerm)
 
     if (filterCriteria === 'all') return matchesSearch
@@ -47,23 +51,32 @@ export default function PatientsPage() {
     return false
   })
 
-  const handleAddHistoryEntry = (entry: { date: string; description: string; attachments: File[] }) => {
+  const handleAddHistoryEntry = async (entry: { date: string; description: string; attachments: File[] }) => {
     if (selectedPatient) {
-      addHistoryEntry({
+      await addHistoryEntry({
         patientId: selectedPatient.id,
         date: entry.date,
         description: entry.description,
         attachments: entry.attachments.map(file => URL.createObjectURL(file))
       })
+      setSelectedPatient(null)
     }
   }
 
-  const handleAddPrescription = (prescription: { date: string; medication: string; dosage: string; instructions: string; renewalDate: string }) => {
+  const handleAddPrescription = async (prescription: { date: string; medication: string; dosage: string; instructions: string; renewalDate: string }) => {
     if (selectedPatient) {
-      addPrescription({
+      await addPrescription({
         patientId: selectedPatient.id,
         ...prescription
       })
+      setSelectedPatient(null)
+    }
+  }
+
+  const handleUpdateSpecialNotes = async (notes: string) => {
+    if (selectedPatient) {
+      await updatePatient(selectedPatient.id, { specialNotes: notes })
+      setSelectedPatient(null)
     }
   }
 
@@ -95,33 +108,82 @@ export default function PatientsPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Patients</h1>
         {user?.role === 'admin' && (
-          <Dialog>
+          <Dialog open={addPatientDialogOpen} onOpenChange={setAddPatientDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <UserPlus className="mr-2 h-4 w-4" /> Add Patient
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Add New Patient</DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => {
+              <form onSubmit={async (e) => {
                 e.preventDefault()
                 const formData = new FormData(e.currentTarget)
-                addPatient({
+                await addPatient({
                   name: formData.get('name') as string,
-                  email: formData.get('email') as string,
+                  age: formData.get('age') ? parseInt(formData.get('age') as string) : undefined,
+                  sex: formData.get('sex') as string || undefined,
+                  address: formData.get('address') as string || undefined,
                   phone: formData.get('phone') as string,
+                  email: formData.get('email') as string || undefined,
                   lastVisit: new Date().toISOString().split('T')[0],
-                  assignedDoctorId: null
+                  assignedDoctorId: null,
+                  specialNotes: ''
                 })
+                setAddPatientDialogOpen(false)
               }}>
                 <div className="grid gap-4 py-4">
-                  <Input id="name" name="name" placeholder="Name" required />
-                  <Input id="email" name="email" type="email" placeholder="Email" required />
-                  <Input id="phone" name="phone" placeholder="Phone" required />
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                      Name
+                    </Label>
+                    <Input id="name" name="name" placeholder="Full Name" required className="col-span-3" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="age" className="text-right">
+                      Age
+                    </Label>
+                    <Input id="age" name="age" type="number" placeholder="Age" className="col-span-3" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="sex" className="text-right">
+                      Sex
+                    </Label>
+                    <Select name="sex">
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select sex" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="address" className="text-right">
+                      Address
+                    </Label>
+                    <Input id="address" name="address" placeholder="Address" className="col-span-3" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="phone" className="text-right">
+                      Phone
+                    </Label>
+                    <Input id="phone" name="phone" placeholder="Phone Number" required className="col-span-3" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="email" className="text-right">
+                      Email
+                    </Label>
+                    <Input id="email" name="email" type="email" placeholder="Email" className="col-span-3" />
+                  </div>
                 </div>
-                <Button type="submit">Add Patient</Button>
+                <DialogFooter>
+                  <Button type="submit">Add Patient</Button>
+                </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
@@ -189,143 +251,173 @@ export default function PatientsPage() {
         </TableBody>
       </Table>
       {selectedPatient && (
-        <Dialog open={!!selectedPatient} onOpenChange={() => setSelectedPatient(null)}>
-          <DialogContent className="max-w-4xl w-3/4 h-3/4 flex flex-col overflow-hidden">
-            <Tabs defaultValue="details" className="flex-grow flex flex-col overflow-hidden">
-              <TabsList className="mb-4">
-                <TabsTrigger value="details">Details</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
-                <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
-                <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                <TabsTrigger value="notifications">Notifications</TabsTrigger>
-              </TabsList>
-              <DialogHeader>
-                <DialogTitle>Patient Details</DialogTitle>
-              </DialogHeader>
-              <TabsContent value="details" className="flex-grow overflow-auto h-full">
-                <Card className="h-full">
-                  <CardHeader>
-                    <CardTitle>{selectedPatient.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="overflow-auto">
-                    <p><strong>Email:</strong> {selectedPatient.email}</p>
-                    <p><strong>Phone:</strong> {selectedPatient.phone}</p>
-                    <p><strong>Last Visit:</strong> {selectedPatient.lastVisit}</p>
-                    <p><strong>Assigned Doctor:</strong> {doctors.find(d => d.id === selectedPatient.assignedDoctorId)?.name || 'Not assigned'}</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="history" className="flex-grow overflow-auto h-full">
-                <Card className="h-full">
-                  <CardHeader>
-                    <CardTitle>Medical History</CardTitle>
-                  </CardHeader>
-                  <CardContent className="overflow-auto">
-                    <AddHistoryEntry patientId={selectedPatient.id} onAdd={handleAddHistoryEntry} />
-                    <ul className="space-y-4 mt-4">
-                      {history
-                        .filter(entry => entry.patientId === selectedPatient.id)
-                        .map(entry => (
-                          <li key={entry.id} className="border-b pb-2">
-                            <p><strong>Date:</strong> {entry.date}</p>
-                            <p>{entry.description}</p>
-                            {entry.attachments.length > 0 && (
-                              <div className="flex items-center mt-2">
-                                <Paperclip className="h-4 w-4 mr-2" />
-                                <span>{entry.attachments.length} attachment(s)</span>
-                              </div>
-                            )}
-                          </li>
-                        ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="prescriptions" className="flex-grow overflow-auto h-full">
-                <Card className="h-full">
-                  <CardHeader>
-                    <CardTitle>Prescriptions</CardTitle>
-                  </CardHeader>
-                  <CardContent className="overflow-auto">
-                    <AddPrescription patientId={selectedPatient.id} onAdd={handleAddPrescription} />
-                    <ul className="space-y-4 mt-4">
-                      {prescriptions
-                        .filter(prescription => prescription.patientId === selectedPatient.id)
-                        .map(prescription => (
-                          <li key={prescription.id} className="border-b pb-2">
-                            <p><strong>Date:</strong> {prescription.date}</p>
-                            <p><strong>Medication:</strong> {prescription.medication}</p>
-                            <p><strong>Dosage:</strong> {prescription.dosage}</p>
-                            <p><strong>Instructions:</strong> {prescription.instructions}</p>
-                            <p><strong>Renewal Date:</strong> {prescription.renewalDate}</p>
-                            <Button onClick={() => printPrescription(prescription)} className="mt-2">
-                              <Printer className="h-4 w-4 mr-2" /> Print Prescription
-                            </Button>
-                          </li>
-                        ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="timeline" className="flex-grow overflow-auto h-full">
-                <Card className="h-full">
-                  <CardHeader>
-                    <CardTitle>Patient Timeline</CardTitle>
-                  </CardHeader>
-                  <CardContent className="overflow-auto">
-                    <ul className="space-y-4">
-                      {[...history, ...prescriptions]
-                        .filter(item => 'patientId' in item && item.patientId === selectedPatient.id)
-                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                        .map((item, index) => (
-                          <li key={index} className="flex items-start space-x-4">
-                            {'description' in item ? (
-                              <>
-                                <FileText className="h-5 w-5 mt-1" />
-                                <div>
-                                  <p><strong>{item.date}</strong></p>
-                                  <p>{item.description}</p>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <Calendar className="h-5 w-5 mt-1" />
-                                <div>
-                                  <p><strong>{item.date}</strong></p>
-                                  <p>Prescription: {item.medication}</p>
-                                </div>
-                              </>
-                            )}
-                          </li>
-                        ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="notifications" className="flex-grow overflow-auto h-full">
-                <Card className="h-full">
-                  <CardHeader>
-                    <CardTitle>Notifications</CardTitle>
-                  </CardHeader>
-                  <CardContent className="overflow-auto">
-                    <ul className="space-y-4">
-                      {notifications
-                        .filter(notification => notification.patientId === selectedPatient.id)
-                        .map(notification => (
-                          <li key={notification.id} className="flex items-start space-x-4">
-                            <Bell className="h-5 w-5 mt-1" />
-                            <div>
-                              <p><strong>{notification.date}</strong></p>
-                              <p>{notification.message}</p>
-                              <p className="text-sm text-muted-foreground">Type: {notification.type}</p>
-                            </div>
-                          </li>
-                        ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+        <Dialog open={!!selectedPatient} onOpenChange={(open) => !open && setSelectedPatient(null)}>
+          <DialogContent className="max-w-4xl w-5/6 h-5/6 flex flex-col overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Patient Details</DialogTitle>
+            </DialogHeader>
+            <div className="flex-grow flex overflow-hidden">
+              <Tabs defaultValue="details" className="flex-grow flex flex-col overflow-hidden">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                  <TabsTrigger value="history">History</TabsTrigger>
+                  <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
+                  <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                  <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                </TabsList>
+                <div className="flex-grow flex overflow-hidden">
+                  <div className="flex-grow overflow-auto pr-4">
+                    <TabsContent value="details" className="h-full">
+                      <Card className="h-full">
+                        <CardHeader>
+                          <CardTitle>{selectedPatient.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p><strong>Age:</strong> {selectedPatient.age || 'Not provided'}</p>
+                          <p><strong>Sex:</strong> {selectedPatient.sex || 'Not provided'}</p>
+                          <p><strong>Address:</strong> {selectedPatient.address || 'Not provided'}</p>
+                          <p><strong>Phone:</strong> {selectedPatient.phone}</p>
+                          <p><strong>Email:</strong> {selectedPatient.email || 'Not provided'}</p>
+                          <p><strong>Last Visit:</strong> {selectedPatient.lastVisit}</p>
+                          <p><strong>Assigned Doctor:</strong> {doctors.find(d => d.id === selectedPatient.assignedDoctorId)?.name || 'Not assigned'}</p>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    <TabsContent value="history" className="h-full">
+                      <Card className="h-full">
+                        <CardHeader>
+                          <CardTitle>Medical History</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 overflow-auto">
+                          <SpecialNotes
+                            patientId={selectedPatient.id}
+                            initialNotes={selectedPatient.specialNotes || ''}
+                            onSave={handleUpdateSpecialNotes}
+                          />
+                          <Collapsible className="border rounded-lg shadow-sm">
+                            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                              <h3 className="text-lg font-semibold">Add New History Entry</h3>
+                              <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="p-4 bg-white">
+                              <AddHistoryEntry patientId={selectedPatient.id} onAdd={handleAddHistoryEntry} />
+                            </CollapsibleContent>
+                          </Collapsible>
+                          <ul className="space-y-4 mt-4">
+                            {history
+                              .filter(entry => entry.patientId === selectedPatient.id)
+                              .map(entry => (
+                                <li key={entry.id} className="border-b pb-2">
+                                  <p><strong>Date:</strong> {entry.date}</p>
+                                  <p>{entry.description}</p>
+                                  {entry.attachments.length > 0 && (
+                                    <div className="flex items-center mt-2">
+                                      <Paperclip className="h-4 w-4 mr-2" />
+                                      <span>{entry.attachments.length} attachment(s)</span>
+                                    </div>
+                                  )}
+                                </li>
+                              ))}
+                          </ul>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    <TabsContent value="prescriptions" className="h-full">
+                      <Card className="h-full">
+                        <CardHeader>
+                          <CardTitle>Prescriptions</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 overflow-auto">
+                          <Collapsible className="border rounded-lg shadow-sm">
+                            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                              <h3 className="text-lg font-semibold">Add New Prescription</h3>
+                              <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="p-4 bg-white">
+                              <AddPrescription patientId={selectedPatient.id} onAdd={handleAddPrescription} />
+                            </CollapsibleContent>
+                          </Collapsible>
+                          <ul className="space-y-4 mt-4">
+                            {prescriptions
+                              .filter(prescription => prescription.patientId === selectedPatient.id)
+                              .map(prescription => (
+                                <li key={prescription.id} className="border-b pb-2">
+                                  <p><strong>Date:</strong> {prescription.date}</p>
+                                  <p><strong>Medication:</strong> {prescription.medication}</p>
+                                  <p><strong>Dosage:</strong> {prescription.dosage}</p>
+                                  <p><strong>Instructions:</strong> {prescription.instructions}</p>
+                                  <p><strong>Renewal Date:</strong> {prescription.renewalDate}</p>
+                                  <Button onClick={() => printPrescription(prescription)} className="mt-2">
+                                    <Printer className="h-4 w-4 mr-2" /> Print Prescription
+                                  </Button>
+                                </li>
+                              ))}
+                          </ul>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    <TabsContent value="timeline" className="h-full">
+                      <Card className="h-full">
+                        <CardHeader>
+                          <CardTitle>Patient Timeline</CardTitle>
+                        </CardHeader>
+                        <CardContent className="overflow-auto">
+                          <ul className="space-y-4">
+                            {[...history, ...prescriptions]
+                              .filter(item => 'patientId' in item && item.patientId === selectedPatient.id)
+                              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                              .map((item, index) => (
+                                <li key={index} className="flex items-start space-x-4">
+                                  {'description' in item ? (
+                                    <>
+                                      <FileText className="h-5 w-5 mt-1" />
+                                      <div>
+                                        <p><strong>{item.date}</strong></p>
+                                        <p>{item.description}</p>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Calendar className="h-5 w-5 mt-1" />
+                                      <div>
+                                        <p><strong>{item.date}</strong></p>
+                                        <p>Prescription: {item.medication}</p>
+                                      </div>
+                                    </>
+                                  )}
+                                </li>
+                              ))}
+                          </ul>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    <TabsContent value="notifications" className="h-full">
+                      <Card className="h-full">
+                        <CardHeader>
+                          <CardTitle>Notifications</CardTitle>
+                        </CardHeader>
+                        <CardContent className="overflow-auto">
+                          <ul className="space-y-4">
+                            {notifications
+                              .filter(notification => notification.patientId === selectedPatient.id)
+                              .map(notification => (
+                                <li key={notification.id} className="flex items-start space-x-4">
+                                  <Bell className="h-5 w-5 mt-1" />
+                                  <div>
+                                    <p><strong>{notification.date}</strong></p>
+                                    <p>{notification.message}</p>
+                                    <p className="text-sm text-muted-foreground">Type: {notification.type}</p>
+                                  </div>
+                                </li>
+                              ))}
+                          </ul>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  </div>
+                </div>
+              </Tabs>
+            </div>
           </DialogContent>
         </Dialog>
       )}
