@@ -319,52 +319,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         const [
           patientsRes,
-          appointmentsRes,
-          treatmentsRes,
-          invoicesRes,
-          historyRes,
-          prescriptionsRes,
-          notificationsRes,
-          doctorsRes
+          // appointmentsRes,
+          // treatmentsRes,
+          // invoicesRes,
+          // historyRes,
+          // prescriptionsRes,
+          // notificationsRes,
+          // doctorsRes
         ] = await Promise.all([
           fetch('/api/patients'),
-          fetch('/api/appointments'),
-          fetch('/api/treatments'),
-          fetch('/api/invoices'),
-          fetch('/api/history'),
-          fetch('/api/prescriptions'),
-          fetch('/api/notifications'),
-          fetch('/api/doctors')
+          // fetch('/api/appointments'),
+          // fetch('/api/treatments'),
+          // fetch('/api/invoices'),
+          // fetch('/api/history'),
+          // fetch('/api/prescriptions'),
+          // fetch('/api/notifications'),
+          // fetch('/api/doctors')
         ]);
 
         const [
           patientsData,
-          appointmentsData,
-          treatmentsData,
-          invoicesData,
-          historyData,
-          prescriptionsData,
-          notificationsData,
-          doctorsData
+          // appointmentsData,
+          // treatmentsData,
+          // invoicesData,
+          // historyData,
+          // prescriptionsData,
+          // notificationsData,
+          // doctorsData
         ] = await Promise.all([
           patientsRes.json(),
-          appointmentsRes.json(),
-          treatmentsRes.json(),
-          invoicesRes.json(),
-          historyRes.json(),
-          prescriptionsRes.json(),
-          notificationsRes.json(),
-          doctorsRes.json()
+          // appointmentsRes.json(),
+          // treatmentsRes.json(),
+          // invoicesRes.json(),
+          // historyRes.json(),
+          // prescriptionsRes.json(),
+          // notificationsRes.json(),
+          // doctorsRes.json()
         ]);
 
+        console.log('Db patients: ', patientsData);
+
         setPatients(patientsData);
-        setAppointments(appointmentsData);
-        setTreatments(treatmentsData);
-        setInvoices(invoicesData);
-        setHistory(historyData);
-        setPrescriptions(prescriptionsData);
-        setNotifications(notificationsData);
-        setDoctors(doctorsData);
+        // setAppointments(appointmentsData);
+        // setTreatments(treatmentsData);
+        // setInvoices(invoicesData);
+        // setHistory(historyData);
+        // setPrescriptions(prescriptionsData);
+        // setNotifications(notificationsData);
+        // setDoctors(doctorsData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred while loading data');
         console.error('Error loading initial data:', err);
@@ -713,7 +715,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw err;
     }
   };
-
+  
   return (
     <AppContext.Provider value={{
       patients,
