@@ -37,13 +37,13 @@ export default function PatientsPage() {
 
     if (filterCriteria === 'all') return matchesSearch
     if (filterCriteria === 'recent') {
-      const lastVisitDate = new Date(patient.lastVisit)
+      const lastVisitDate = new Date(patient.last_visit)
       const oneMonthAgo = new Date()
       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
       return matchesSearch && lastVisitDate >= oneMonthAgo
     }
     if (filterCriteria === 'overdue') {
-      const lastVisitDate = new Date(patient.lastVisit)
+      const lastVisitDate = new Date(patient.last_visit)
       const sixMonthsAgo = new Date()
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
       return matchesSearch && lastVisitDate < sixMonthsAgo
@@ -54,9 +54,10 @@ export default function PatientsPage() {
   const handleAddHistoryEntry = async (entry: { date: string; description: string; attachments: File[] }) => {
     if (selectedPatient) {
       await addHistoryEntry({
-        patientId: selectedPatient.id,
+        patient_id: selectedPatient.id,
         date: entry.date,
         description: entry.description,
+        doctor_id: user?.id ?? 0,
         attachments: entry.attachments.map(file => URL.createObjectURL(file))
       })
       setSelectedPatient(null)
@@ -66,8 +67,13 @@ export default function PatientsPage() {
   const handleAddPrescription = async (prescription: { date: string; medication: string; dosage: string; instructions: string; renewalDate: string }) => {
     if (selectedPatient) {
       await addPrescription({
-        patientId: selectedPatient.id,
-        ...prescription
+        patient_id: selectedPatient.id,
+        ...prescription,
+        doctor_id: user?.id ?? 0,
+        frequency: '',
+        duration: '',
+        renewal_date: '',
+        status: 'active'
       })
       setSelectedPatient(null)
     }
@@ -75,14 +81,14 @@ export default function PatientsPage() {
 
   const handleUpdateSpecialNotes = async (notes: string) => {
     if (selectedPatient) {
-      await updatePatient(selectedPatient.id, { specialNotes: notes })
+      await updatePatient(selectedPatient.id, { special_notes: notes })
       setSelectedPatient(null)
     }
   }
 
   const printPrescription = (prescription: typeof prescriptions[0]) => {
-    const patient = patients.find(p => p.id === prescription.patientId)
-    const doctor = doctors.find(d => d.id === patient?.assignedDoctorId)
+    const patient = patients.find(p => p.id === prescription.patient_id)
+    const doctor = doctors.find(d => d.id === patient?.assigned_doctor_id)
     
     const prescriptionContent = `
       <h1>Prescription</h1>
@@ -92,7 +98,7 @@ export default function PatientsPage() {
       <p><strong>Medication:</strong> ${prescription.medication}</p>
       <p><strong>Dosage:</strong> ${prescription.dosage}</p>
       <p><strong>Instructions:</strong> ${prescription.instructions}</p>
-      <p><strong>Renewal Date:</strong> ${prescription.renewalDate}</p>
+      <p><strong>Renewal Date:</strong> ${prescription.renewal_date}</p>
     `
 
     const printWindow = window.open('', '_blank')
@@ -128,9 +134,9 @@ export default function PatientsPage() {
                   address: formData.get('address') as string || undefined,
                   phone: formData.get('phone') as string,
                   email: formData.get('email') as string || undefined,
-                  lastVisit: new Date().toISOString().split('T')[0],
-                  assignedDoctorId: null,
-                  specialNotes: ''
+                  last_visit: new Date().toISOString().split('T')[0],
+                  assigned_doctor_id: null,
+                  special_notes: ''
                 })
                 setAddPatientDialogOpen(false)
               }}>
@@ -226,11 +232,11 @@ export default function PatientsPage() {
               <TableCell className="font-medium">{patient.name}</TableCell>
               <TableCell>{patient.email}</TableCell>
               <TableCell>{patient.phone}</TableCell>
-              <TableCell>{patient.lastVisit}</TableCell>
+              <TableCell>{patient.last_visit}</TableCell>
               {user?.role === 'admin' && (
                 <TableCell>
                   <Select
-                    value={patient.assignedDoctorId?.toString() || ''}
+                    value={patient.assigned_doctor_id?.toString() || ''}
                     onValueChange={(value) => assignPatientToDoctor(patient.id, parseInt(value))}
                   >
                     <SelectTrigger>
@@ -278,8 +284,8 @@ export default function PatientsPage() {
                           <p><strong>Address:</strong> {selectedPatient.address || 'Not provided'}</p>
                           <p><strong>Phone:</strong> {selectedPatient.phone}</p>
                           <p><strong>Email:</strong> {selectedPatient.email || 'Not provided'}</p>
-                          <p><strong>Last Visit:</strong> {selectedPatient.lastVisit}</p>
-                          <p><strong>Assigned Doctor:</strong> {doctors.find(d => d.id === selectedPatient.assignedDoctorId)?.name || 'Not assigned'}</p>
+                          <p><strong>Last Visit:</strong> {selectedPatient.last_visit}</p>
+                          <p><strong>Assigned Doctor:</strong> {doctors.find(d => d.id === selectedPatient.assigned_doctor_id)?.name || 'Not assigned'}</p>
                         </CardContent>
                       </Card>
                     </TabsContent>
@@ -291,7 +297,7 @@ export default function PatientsPage() {
                         <CardContent className="space-y-4 overflow-auto">
                           <SpecialNotes
                             patientId={selectedPatient.id}
-                            initialNotes={selectedPatient.specialNotes || ''}
+                            initialNotes={selectedPatient.special_notes || ''}
                             onSave={handleUpdateSpecialNotes}
                           />
                           <Collapsible className="border rounded-lg shadow-sm">
@@ -305,7 +311,7 @@ export default function PatientsPage() {
                           </Collapsible>
                           <ul className="space-y-4 mt-4">
                             {history
-                              .filter(entry => entry.patientId === selectedPatient.id)
+                              .filter(entry => entry.patient_id === selectedPatient.id)
                               .map(entry => (
                                 <li key={entry.id} className="border-b pb-2">
                                   <p><strong>Date:</strong> {entry.date}</p>
@@ -339,14 +345,14 @@ export default function PatientsPage() {
                           </Collapsible>
                           <ul className="space-y-4 mt-4">
                             {prescriptions
-                              .filter(prescription => prescription.patientId === selectedPatient.id)
+                              .filter(prescription => prescription.patient_id === selectedPatient.id)
                               .map(prescription => (
                                 <li key={prescription.id} className="border-b pb-2">
                                   <p><strong>Date:</strong> {prescription.date}</p>
                                   <p><strong>Medication:</strong> {prescription.medication}</p>
                                   <p><strong>Dosage:</strong> {prescription.dosage}</p>
                                   <p><strong>Instructions:</strong> {prescription.instructions}</p>
-                                  <p><strong>Renewal Date:</strong> {prescription.renewalDate}</p>
+                                  <p><strong>Renewal Date:</strong> {prescription.renewal_date}</p>
                                   <Button onClick={() => printPrescription(prescription)} className="mt-2">
                                     <Printer className="h-4 w-4 mr-2" /> Print Prescription
                                   </Button>
@@ -399,7 +405,7 @@ export default function PatientsPage() {
                         <CardContent className="overflow-auto">
                           <ul className="space-y-4">
                             {notifications
-                              .filter(notification => notification.patientId === selectedPatient.id)
+                              .filter(notification => notification.patient_id === selectedPatient.id)
                               .map(notification => (
                                 <li key={notification.id} className="flex items-start space-x-4">
                                   <Bell className="h-5 w-5 mt-1" />

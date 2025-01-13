@@ -27,9 +27,12 @@ export default function MyPatientsPage() {
 
   const filteredPatients = myPatients.filter(patient => 
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    // patient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     patient.phone.includes(searchTerm)
   )
+
+  console.log(user?.id);
+  console.log(myPatients);
 
   const patientNotifications = notifications.filter(n => n.patientId === selectedPatient?.id)
 

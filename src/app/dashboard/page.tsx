@@ -13,7 +13,7 @@ export default function Dashboard() {
 
   const todayAppointments = appointments.filter(appointment => {
     const today = new Date().toISOString().split('T')[0]
-    return appointment.date === today && (user?.role === 'admin' || (user?.role === 'doctor' && myPatients.some(p => p.id === appointment.patientId)))
+    return appointment.date === today && (user?.role === 'admin' || (user?.role === 'doctor' && myPatients.some(p => p.id === appointment.patient_id)))
   })
 
   return (

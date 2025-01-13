@@ -17,6 +17,7 @@ const nextConfig = {
     unoptimized: true,
   },
   experimental: {
+    // serverActions: true,
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
@@ -44,5 +45,8 @@ function mergeConfig(nextConfig, userConfig) {
     }
   }
 }
+
+// module.exports = nextConfig
+
 
 export default nextConfig
