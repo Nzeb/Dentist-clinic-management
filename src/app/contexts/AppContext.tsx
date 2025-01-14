@@ -271,6 +271,11 @@ interface AppContextType {
   getPatientsForDoctor: (doctorId: number) => Promise<DBPatient[]>;
   assignPatientToDoctor: (patientId: number, doctorId: number) => Promise<DBPatient | null>;
 
+  // Doctor functions
+  addDoctor: (doctor: Omit<DBDoctor, 'id'>) => Promise<DBDoctor>;
+  updateDoctor: (id: number, doctor: Partial<DBDoctor>) => Promise<DBDoctor | null>;
+  deleteDoctor: (id: number) => Promise<boolean>;
+
   // Appointment functions
   addAppointment: (appointment: Omit<DBAppointment, 'id'>) => Promise<DBAppointment>;
   updateAppointment: (id: number, appointment: Partial<DBAppointment>) => Promise<DBAppointment | null>;
@@ -320,7 +325,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const [
           patientsRes,
           appointmentsRes,
-          // treatmentsRes,
+          treatmentsRes,
           // invoicesRes,
           // historyRes,
           // prescriptionsRes,
@@ -329,7 +334,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ] = await Promise.all([
           fetch('/api/patients'),
           fetch('/api/appointments'),
-          // fetch('/api/treatments'),
+          fetch('/api/treatments'),
           // fetch('/api/invoices'),
           // fetch('/api/history'),
           // fetch('/api/prescriptions'),
@@ -340,7 +345,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const [
           patientsData,
           appointmentsData,
-          // treatmentsData,
+          treatmentsData,
           // invoicesData,
           // historyData,
           // prescriptionsData,
@@ -349,7 +354,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ] = await Promise.all([
           patientsRes.json(),
           appointmentsRes.json(),
-          // treatmentsRes.json(),
+          treatmentsRes.json(),
           // invoicesRes.json(),
           // historyRes.json(),
           // prescriptionsRes.json(),
@@ -361,7 +366,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         setPatients(patientsData);
         setAppointments(appointmentsData);
-        // setTreatments(treatmentsData);
+        setTreatments(treatmentsData);
         // setInvoices(invoicesData);
         // setHistory(historyData);
         // setPrescriptions(prescriptionsData);
@@ -420,6 +425,73 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw err;
     }
   };
+
+  //Doctor functions
+  const addDoctor = async (doctor: Omit<DBDoctor, 'id'>) => {
+    try {
+      const response = await fetch('/api/doctors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(doctor),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to add doctor');
+      }
+  
+      const newDoctor = await response.json();
+      setDoctors([...doctors, newDoctor]);
+      return newDoctor;
+    } catch (error) {
+      console.error('Error adding doctor:', error);
+      // Handle error (e.g., show toast notification)
+    }
+  };
+  
+  const updateDoctor = async (id: number, doctor: Partial<DBDoctor>) => {
+    try {
+      const response = await fetch(`/api/doctors/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(doctor),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to update doctor');
+      }
+  
+      const updatedDoctor = await response.json();
+      setDoctors(doctors.map(d => d.id === id ? updatedDoctor : d));
+      return updatedDoctor;
+    } catch (error) {
+      console.error('Error updating doctor:', error);
+      // Handle error (e.g., show toast notification)
+    }
+  };
+  
+  const deleteDoctor = async (id: number) => {
+    try {
+      const response = await fetch(`/api/doctors/${id}`, {
+        method: 'DELETE',
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to delete doctor');
+      }
+  
+      setDoctors(doctors.filter(d => d.id !== id));
+      return true;
+    } catch (err) {
+      console.error('Error deleting doctor:', err);
+      throw err;
+      // Handle error (e.g., show toast notification)
+    }
+  };
+  
 
   // Appointment functions
   const addAppointment = async (appointment: Omit<DBAppointment, 'id'>) => {
@@ -733,6 +805,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updatePatient,
       getPatientsForDoctor,
       assignPatientToDoctor,
+      addDoctor,
+      updateDoctor,
+      deleteDoctor,
       addAppointment,
       updateAppointment,
       deleteAppointment,

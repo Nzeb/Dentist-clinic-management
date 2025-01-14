@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppContext } from '../contexts/AppContext'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from "@/components/ui/button"
@@ -22,8 +22,19 @@ export default function MyPatientsPage() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<typeof patients[0] | null>(null)
+  const [myPatients, setMyPatients] = useState<typeof patients>([])
 
-  const myPatients = user?.role === 'doctor' ? getPatientsForDoctor(user.id) : []
+  useEffect(() => {
+    const loadPatients = async () => {
+      if (user?.role === 'doctor') {
+        const patients = await getPatientsForDoctor(user.id)
+        setMyPatients(patients)
+      } else {
+        setMyPatients(patients)
+      }
+    }
+    loadPatients()
+  }, [user, getPatientsForDoctor, patients])
 
   const filteredPatients = myPatients.filter(patient => 
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -34,7 +45,7 @@ export default function MyPatientsPage() {
   console.log(user?.id);
   console.log(myPatients);
 
-  const patientNotifications = notifications.filter(n => n.patientId === selectedPatient?.id)
+  const patientNotifications = notifications.filter(n => n.patient_id === selectedPatient?.id)
 
   return (
     <div className="space-y-6">
@@ -65,7 +76,7 @@ export default function MyPatientsPage() {
               <TableCell className="font-medium">{patient.name}</TableCell>
               <TableCell>{patient.email}</TableCell>
               <TableCell>{patient.phone}</TableCell>
-              <TableCell>{patient.lastVisit}</TableCell>
+              <TableCell>{patient.last_visit}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -92,7 +103,7 @@ export default function MyPatientsPage() {
                   <CardContent>
                     <p><strong>Email:</strong> {selectedPatient.email}</p>
                     <p><strong>Phone:</strong> {selectedPatient.phone}</p>
-                    <p><strong>Last Visit:</strong> {selectedPatient.lastVisit}</p>
+                    <p><strong>Last Visit:</strong> {selectedPatient.last_visit}</p>
                   </CardContent>
                 </Card>
               </TabsContent>

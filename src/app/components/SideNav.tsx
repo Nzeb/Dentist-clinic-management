@@ -10,6 +10,7 @@ import { LayoutDashboard, Users, Calendar, Stethoscope, Receipt, LogOut } from '
 
 const adminNavItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Doctors', href: '/doctors', icon: Users },
   { name: 'Patients', href: '/patients', icon: Users },
   { name: 'Appointments', href: '/appointments', icon: Calendar },
   { name: 'Treatments', href: '/treatments', icon: Stethoscope },

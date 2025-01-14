@@ -29,7 +29,6 @@ export default function AppointmentsPage() {
     }
     loadPatients()
   }, [user, getPatientsForDoctor, patients])
-  // const myPatients = user?.role === 'doctor' ? getPatientsForDoctor(user.id) : patients
 
   const filteredAppointments = appointments.filter(
     appointment => {

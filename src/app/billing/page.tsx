@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppContext } from '../contexts/AppContext'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from "@/components/ui/button"
@@ -16,9 +16,21 @@ export default function BillingPage() {
   const { user } = useAuth()
   const [selectedInvoice, setSelectedInvoice] = useState<typeof invoices[0] | null>(null)
   const [createInvoiceDialogOpen, setCreateInvoiceDialogOpen] = useState(false)
+  const [myPatients, setMyPatients] = useState<typeof patients>([])
 
-  const myPatients = user?.role === 'doctor' ? getPatientsForDoctor(user.id) : patients
-  const myInvoices = invoices.filter(invoice => myPatients.some(p => p.id === invoice.patientId))
+  useEffect(() => {
+    const loadPatients = async () => {
+      if (user?.role === 'doctor') {
+        const patients = await getPatientsForDoctor(user.id)
+        setMyPatients(patients)
+      } else {
+        setMyPatients(patients)
+      }
+    }
+    loadPatients()
+  }, [user, getPatientsForDoctor, patients])
+
+  const myInvoices = invoices.filter(invoice => myPatients.some(p => p.id === invoice.patient_id))
 
   const totalRevenue = myInvoices.reduce((sum, invoice) => sum + parseFloat(invoice.amount.replace('$', '')), 0)
   const pendingPayments = myInvoices.filter(invoice => invoice.status === 'Pending')
@@ -43,10 +55,11 @@ export default function BillingPage() {
                 e.preventDefault()
                 const formData = new FormData(e.currentTarget)
                 await addInvoice({
-                  patientId: Number(formData.get('patientId')),
+                  patient_id: Number(formData.get('patientId')),
                   date: new Date().toISOString().split('T')[0],
                   amount: `$${formData.get('amount')}`,
-                  status: formData.get('status') as 'Paid' | 'Pending' | 'Overdue'
+                  status: formData.get('status') as 'Paid' | 'Pending' | 'Overdue',
+                  due_date: ''
                 })
                 setCreateInvoiceDialogOpen(false)
               }}>
@@ -128,7 +141,7 @@ export default function BillingPage() {
             </TableHeader>
             <TableBody>
               {myInvoices.map((invoice) => {
-                const patient = myPatients.find(p => p.id === invoice.patientId)
+                const patient = myPatients.find(p => p.id === invoice.patient_id)
                 return (
                   <TableRow key={invoice.id} onClick={() => setSelectedInvoice(invoice)} className="cursor-pointer">
                     <TableCell className="font-medium">{patient?.name}</TableCell>
@@ -156,7 +169,7 @@ export default function BillingPage() {
                 <CardTitle>Invoice #{selectedInvoice.id}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p><strong>Patient:</strong> {myPatients.find(p => p.id === selectedInvoice.patientId)?.name}</p>
+                <p><strong>Patient:</strong> {myPatients.find(p => p.id === selectedInvoice.patient_id)?.name}</p>
                 <p><strong>Date:</strong> {selectedInvoice.date}</p>
                 <p><strong>Amount:</strong> {selectedInvoice.amount}</p>
                 <p><strong>Status:</strong> {selectedInvoice.status}</p>
