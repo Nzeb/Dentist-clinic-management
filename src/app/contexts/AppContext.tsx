@@ -421,11 +421,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-// Continuing inside the AppProvider component...
-
   // Appointment functions
   const addAppointment = async (appointment: Omit<DBAppointment, 'id'>) => {
+    console.log("add appointment function called");
     try {
+      console.log("add appointment function called inside");
+      console.log(appointment);
       const response = await fetch('/api/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

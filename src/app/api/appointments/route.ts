@@ -17,6 +17,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  console.log('POST /api/appointments called');
   try {
     const data = await request.json();
     const appointmentService = new AppointmentService();

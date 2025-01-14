@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppContext } from '../contexts/AppContext'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from "@/components/ui/button"
@@ -9,19 +9,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Clock } from 'lucide-react'
+import { DBPatient } from '@/types/db'
 
 export default function AppointmentsPage() {
   const { appointments, patients, addAppointment, getPatientsForDoctor } = useAppContext()
   const { user } = useAuth()
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [addAppointmentDialogOpen, setAddAppointmentDialogOpen] = useState(false)
+  const [myPatients, setMyPatients] = useState<DBPatient[]>([])
 
-  const myPatients = user?.role === 'doctor' ? getPatientsForDoctor(user.id) : patients
+  useEffect(() => {
+    const loadPatients = async () => {
+      if (user?.role === 'doctor') {
+        const patients = await getPatientsForDoctor(user.id)
+        setMyPatients(patients)
+      } else {
+        setMyPatients(patients)
+      }
+    }
+    loadPatients()
+  }, [user, getPatientsForDoctor, patients])
+  // const myPatients = user?.role === 'doctor' ? getPatientsForDoctor(user.id) : patients
 
   const filteredAppointments = appointments.filter(
     appointment => {
       const isCorrectDate = appointment.date === selectedDate?.toISOString().split('T')[0]
-      const isAssignedPatient = user?.role === 'admin' || myPatients.some(p => p.id === appointment.patientId)
+      const isAssignedPatient = user?.role === 'admin' || myPatients.some(p => p.id === appointment.patient_id)
       return isCorrectDate && isAssignedPatient
     }
   )
@@ -44,10 +57,12 @@ export default function AppointmentsPage() {
               e.preventDefault()
               const formData = new FormData(e.currentTarget)
               await addAppointment({
-                patientId: Number(formData.get('patientId')),
+                patient_id: Number(formData.get('patientId')),
                 date: (formData.get('date') as string).split('T')[0],
                 time: formData.get('time') as string,
-                type: formData.get('type') as string
+                type: formData.get('type') as string,
+                doctor_id: 0,
+                status: 'scheduled'
               })
               setAddAppointmentDialogOpen(false)
             }}>
@@ -92,7 +107,7 @@ export default function AppointmentsPage() {
           <CardContent>
             <ul className="space-y-4">
               {filteredAppointments.map((appointment) => {
-                const patient = myPatients.find(p => p.id === appointment.patientId)
+                const patient = myPatients.find(p => p.id === appointment.patient_id)
                 return (
                   <li key={appointment.id} className="flex items-center space-x-4">
                     <Clock className="h-4 w-4 text-muted-foreground" />
