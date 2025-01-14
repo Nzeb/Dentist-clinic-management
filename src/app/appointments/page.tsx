@@ -6,16 +6,19 @@ import { useAuth } from '../contexts/AuthContext'
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Clock } from 'lucide-react'
+import { Plus, Clock, Edit, Trash } from 'lucide-react'
 import { DBPatient } from '@/types/db'
+import { Input } from '@/components/ui/input'
 
 export default function AppointmentsPage() {
-  const { appointments, patients, addAppointment, getPatientsForDoctor } = useAppContext()
+  const { appointments, patients, addAppointment, updateAppointment, deleteAppointment, getPatientsForDoctor } = useAppContext()
   const { user } = useAuth()
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [addAppointmentDialogOpen, setAddAppointmentDialogOpen] = useState(false)
+  const [selectedAppointment, setSelectedAppointment] = useState<typeof appointments[0] | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [myPatients, setMyPatients] = useState<DBPatient[]>([])
 
   useEffect(() => {
@@ -44,6 +47,26 @@ export default function AppointmentsPage() {
       return isCorrectDate && isAssignedPatient
     }
   )
+
+  const handleUpdateAppointment = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!selectedAppointment) return
+    const formData = new FormData(e.currentTarget)
+    await updateAppointment(selectedAppointment.id, {
+      patient_id: Number(formData.get('patientId')),
+      date: formData.get('date') as string,
+      time: formData.get('time') as string,
+      type: formData.get('type') as string
+    })
+    setIsEditDialogOpen(false)
+    setSelectedAppointment(null)
+  }
+
+  const handleDeleteAppointment = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this appointment?')) {
+      await deleteAppointment(id)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -115,11 +138,24 @@ export default function AppointmentsPage() {
               {filteredAppointments.map((appointment) => {
                 const patient = myPatients.find(p => p.id === appointment.patient_id)
                 return (
-                  <li key={appointment.id} className="flex items-center space-x-4">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  <li key={appointment.id} className="flex items-center justify-between space-x-4">
                     <div>
-                      <p className="font-medium">{patient?.name}</p>
-                      <p className="text-sm text-muted-foreground">{appointment.time} - {appointment.type}</p>
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">{patient?.name}</p>
+                        <p className="text-sm text-muted-foreground">{appointment.time} - {appointment.type}</p>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="icon" onClick={() => {
+                        setSelectedAppointment(appointment)
+                        setIsEditDialogOpen(true)
+                      }}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => handleDeleteAppointment(appointment.id)}>
+                        <Trash className="h-4 w-4" />
+                      </Button>
                     </div>
                   </li>
                 )
@@ -128,6 +164,33 @@ export default function AppointmentsPage() {
           </CardContent>
         </Card>
       </div>
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Appointment</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateAppointment}>
+            <div className="grid gap-4 py-4">
+              <Select name="patientId" defaultValue={selectedAppointment?.patient_id.toString()} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select patient" />
+                </SelectTrigger>
+                <SelectContent>
+                  {myPatients.map(patient => (
+                    <SelectItem key={patient.id} value={patient.id.toString()}>{patient.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input type="date" name="date" defaultValue={selectedAppointment?.date} required />
+              <Input type="time" name="time" defaultValue={selectedAppointment?.time} required />
+              <Input type="text" name="type" placeholder="Appointment Type" defaultValue={selectedAppointment?.type} required />
+            </div>
+            <DialogFooter>
+              <Button type="submit">Update Appointment</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
