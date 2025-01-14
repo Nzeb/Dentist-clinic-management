@@ -319,7 +319,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         const [
           patientsRes,
-          // appointmentsRes,
+          appointmentsRes,
           // treatmentsRes,
           // invoicesRes,
           // historyRes,
@@ -328,7 +328,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // doctorsRes
         ] = await Promise.all([
           fetch('/api/patients'),
-          // fetch('/api/appointments'),
+          fetch('/api/appointments'),
           // fetch('/api/treatments'),
           // fetch('/api/invoices'),
           // fetch('/api/history'),
@@ -339,7 +339,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         const [
           patientsData,
-          // appointmentsData,
+          appointmentsData,
           // treatmentsData,
           // invoicesData,
           // historyData,
@@ -348,7 +348,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // doctorsData
         ] = await Promise.all([
           patientsRes.json(),
-          // appointmentsRes.json(),
+          appointmentsRes.json(),
           // treatmentsRes.json(),
           // invoicesRes.json(),
           // historyRes.json(),
@@ -360,7 +360,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.log('Db patients: ', patientsData);
 
         setPatients(patientsData);
-        // setAppointments(appointmentsData);
+        setAppointments(appointmentsData);
         // setTreatments(treatmentsData);
         // setInvoices(invoicesData);
         // setHistory(historyData);

@@ -33,7 +33,14 @@ export default function AppointmentsPage() {
 
   const filteredAppointments = appointments.filter(
     appointment => {
-      const isCorrectDate = appointment.date === selectedDate?.toISOString().split('T')[0]
+      // Convert both dates to Date objects for reliable comparison
+      const appointmentDate = new Date(appointment.date);
+      const selectedDateTime = selectedDate ? new Date(selectedDate.setHours(0, 0, 0, 0)) : null;
+
+      // Compare the dates after normalizing them to start of day
+      const isCorrectDate = selectedDateTime &&
+        appointmentDate.toISOString().split('T')[0] === selectedDateTime.toISOString().split('T')[0];
+
       const isAssignedPatient = user?.role === 'admin' || myPatients.some(p => p.id === appointment.patient_id)
       return isCorrectDate && isAssignedPatient
     }
