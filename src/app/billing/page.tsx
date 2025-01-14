@@ -6,16 +6,17 @@ import { useAuth } from '../contexts/AuthContext'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DollarSign, FileText, CreditCard } from 'lucide-react'
+import { DollarSign, FileText, CreditCard, Edit, Trash } from 'lucide-react'
 
 export default function BillingPage() {
   const { invoices, patients, addInvoice, getPatientsForDoctor } = useAppContext()
   const { user } = useAuth()
   const [selectedInvoice, setSelectedInvoice] = useState<typeof invoices[0] | null>(null)
   const [createInvoiceDialogOpen, setCreateInvoiceDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [myPatients, setMyPatients] = useState<typeof patients>([])
 
   useEffect(() => {
@@ -35,6 +36,27 @@ export default function BillingPage() {
   const totalRevenue = myInvoices.reduce((sum, invoice) => sum + parseFloat(invoice.amount.replace('$', '')), 0)
   const pendingPayments = myInvoices.filter(invoice => invoice.status === 'Pending')
   const overduePayments = myInvoices.filter(invoice => invoice.status === 'Overdue')
+
+  const handleUpdateInvoice = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!selectedInvoice) return
+    const formData = new FormData(e.currentTarget)
+    await updateInvoice(selectedInvoice.id, {
+      patientId: Number(formData.get('patientId')),
+      date: formData.get('date') as string,
+      amount: formData.get('amount') as string,
+      status: formData.get('status') as 'Paid' | 'Pending' | 'Overdue'
+    })
+    setIsEditDialogOpen(false)
+    setSelectedInvoice(null)
+  }
+
+  // TODO think if we should add delete invoice option
+  // const handleDeleteInvoice = async (id: number) => {
+  //   if (window.confirm('Are you sure you want to delete this invoice?')) {
+  //     await deleteInvoice(id)
+  //   }
+  // }
 
   return (
     <div className="space-y-6">
@@ -148,6 +170,19 @@ export default function BillingPage() {
                     <TableCell>{invoice.date}</TableCell>
                     <TableCell>{invoice.amount}</TableCell>
                     <TableCell>{invoice.status}</TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="icon" onClick={() => {
+                          setSelectedInvoice(invoice)
+                          setIsEditDialogOpen(true)
+                        }}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {/* <Button variant="outline" size="icon" onClick={() => handleDeleteInvoice(invoice.id)}>
+                          <Trash className="h-4 w-4" />
+                        </Button> */}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 )
               })}
@@ -178,7 +213,47 @@ export default function BillingPage() {
           </DialogContent>
         </Dialog>
       )}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Invoice</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateInvoice}>
+            <div className="grid gap-4 py-4">
+              <Select name="patientId" defaultValue={selectedInvoice?.patient_id.toString()} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select patient" />
+                </SelectTrigger>
+                <SelectContent>
+                  {myPatients.map(patient => (
+                    <SelectItem key={patient.id} value={patient.id.toString()}>{patient.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input type="date" name="date" defaultValue={selectedInvoice?.date} required />
+              <Input type="text" name="amount" defaultValue={selectedInvoice?.amount} required />
+              <Select name="status" defaultValue={selectedInvoice?.status} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Paid">Paid</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Overdue">Overdue</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="submit">Update Invoice</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
+}
+
+function updateInvoice(id: number, arg1: { patientId: number; date: string; amount: string; status: "Paid" | "Pending" | "Overdue" }) {
+  throw new Error('Function not implemented.')
 }
 
