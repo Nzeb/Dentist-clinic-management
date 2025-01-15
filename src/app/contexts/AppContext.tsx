@@ -58,6 +58,7 @@ interface AppContextType {
   addPrescription: (prescription: Omit<DBPrescription, 'id'>) => Promise<DBPrescription>;
   updatePrescription: (id: number, prescription: Partial<DBPrescription>) => Promise<DBPrescription | null>;
   deletePrescription: (id: number) => Promise<boolean>;
+  getPatientPrescription: (patientId: number) => Promise<DBPrescription[]>;
 
   // Notification functions
   addNotification: (notification: Omit<DBNotification, 'id'>) => Promise<DBNotification>;
@@ -503,6 +504,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const getPatientPrescription = async (patientId: number) => {
+    console.log("API CALL for patient prescription: ", patientId)
+    try {
+      const response = await fetch(`/api/prescriptions/${patientId}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch patient prescription');
+
+      const prescription = await response.json();
+      setPrescriptions(prescription);
+      return prescription;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch patient prescription');
+      throw err;
+    }
+  };
+
+
   // Notification functions
   const addNotification = async (notification: Omit<DBNotification, 'id'>) => {
     try {
@@ -615,6 +635,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addPrescription,
       updatePrescription,
       deletePrescription,
+      getPatientPrescription,
       addNotification,
       deleteNotification,
     }}>

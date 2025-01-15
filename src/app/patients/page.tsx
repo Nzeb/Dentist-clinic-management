@@ -23,7 +23,7 @@ export default function PatientsPage() {
   const { 
     patients, doctors, history, prescriptions, notifications,
     addPatient, updatePatient, addHistoryEntry, updateHistoryEntry, deleteHistoryEntry, getPatientHistory,
-    addPrescription, updatePrescription, deletePrescription,
+    addPrescription, updatePrescription, deletePrescription, getPatientPrescription,
     addNotification, deleteNotification, assignPatientToDoctor
   } = useAppContext()
   const { user } = useAuth()
@@ -31,7 +31,7 @@ export default function PatientsPage() {
   const [selectedPatient, setSelectedPatient] = useState<typeof patients[0] | null>(null)
   const [patientData, setPatientData] = useState<{
     history: typeof history;
-    // prescriptions: typeof prescriptions;
+    prescriptions: typeof prescriptions;
     // Add other patient-related data types as needed
   } | null>(null)
   const [filterCriteria, setFilterCriteria] = useState<'all' | 'recent' | 'overdue'>('all')
@@ -80,18 +80,18 @@ export default function PatientsPage() {
       // Fetch all patient data in parallel
       const [
         patientHistory,
-        // patientPrescriptions,
+        patientPrescriptions,
         // Add other data fetching promises as needed
       ] = await Promise.all([
         getPatientHistory(patient.id),
         // Add your getPatientPrescriptions function
-        // getPatientPrescriptions(patient.id),
+        getPatientPrescription(patient.id),
         // Add other data fetching functions
       ])
   
       setPatientData({
         history: patientHistory,
-        // prescriptions: patientPrescriptions,
+        prescriptions: patientPrescriptions,
         // Set other fetched data
       })
     } catch (error) {
@@ -452,20 +452,23 @@ export default function PatientsPage() {
                             </CollapsibleContent>
                           </Collapsible>
                           <ul className="space-y-4 mt-4">
-                            {prescriptions
-                              .filter(prescription => prescription.patient_id === selectedPatient.id)
-                              .map(prescription => (
-                                <li key={prescription.id} className="border-b pb-2">
-                                  <p><strong>Date:</strong> {prescription.date}</p>
-                                  <p><strong>Medication:</strong> {prescription.medication}</p>
-                                  <p><strong>Dosage:</strong> {prescription.dosage}</p>
-                                  <p><strong>Instructions:</strong> {prescription.instructions}</p>
-                                  <p><strong>Renewal Date:</strong> {prescription.renewal_date}</p>
-                                  <Button onClick={() => printPrescription(prescription)} className="mt-2">
-                                    <Printer className="h-4 w-4 mr-2" /> Print Prescription
-                                  </Button>
-                                </li>
-                              ))}
+                            {patientData?.prescriptions && patientData.prescriptions.length > 0 ? (
+                              patientData.prescriptions
+                                .filter(prescription => prescription.patient_id === selectedPatient.id)
+                                .map(prescription => (
+                                  <li key={prescription.id} className="border-b pb-2">
+                                    <p><strong>Date:</strong> {prescription.date}</p>
+                                    <p><strong>Medication:</strong> {prescription.medication}</p>
+                                    <p><strong>Dosage:</strong> {prescription.dosage}</p>
+                                    <p><strong>Instructions:</strong> {prescription.instructions}</p>
+                                    <p><strong>Renewal Date:</strong> {prescription.renewal_date}</p>
+                                    <Button onClick={() => printPrescription(prescription)} className="mt-2">
+                                      <Printer className="h-4 w-4 mr-2" /> Print Prescription
+                                    </Button>
+                                  </li>
+                                ))) : (
+                              <p>No prescriptions available</p>
+                            )}
                           </ul>
                         </CardContent>
                       </Card>
