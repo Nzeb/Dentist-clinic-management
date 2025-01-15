@@ -269,7 +269,7 @@ interface AppContextType {
   addPatient: (patient: Omit<DBPatient, 'id'>) => Promise<DBPatient>;
   updatePatient: (id: number, patient: Partial<DBPatient>) => Promise<DBPatient>;
   getPatientsForDoctor: (doctorId: number) => Promise<DBPatient[]>;
-  assignPatientToDoctor: (patientId: number, doctorId: number) => Promise<DBPatient | null>;
+  assignPatientToDoctor: (patient: DBPatient, doctorId: number) => Promise<DBPatient | null>;
 
   // Doctor functions
   addDoctor: (doctor: Omit<DBDoctor, 'id'>) => Promise<DBDoctor>;
@@ -772,19 +772,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const assignPatientToDoctor = async (patientId: number, doctorId: number) => {
+  const assignPatientToDoctor = async (patient: DBPatient, doctorId: number) => {
+
+    if(!patient) throw new Error('Patient not found');
     try {
-      const response = await fetch(`/api/patients/${patientId}/assign-doctor`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ doctorId }),
+      // Update the patient's assigned doctor
+      const updatedPatient = {
+          ...patient,
+          assigned_doctor_id: doctorId
+      };
+
+      // Make PATCH request to update the patient
+      const response = await fetch(`/api/patients/${patient.id}`, {
+          method: 'PATCH',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updatedPatient)
       });
 
       if (!response.ok) throw new Error('Failed to assign patient to doctor');
 
-      const updatedPatient = await response.json();
-      setPatients(prev => prev.map(p => p.id === patientId ? updatedPatient : p));
-      return updatedPatient;
+      const responsePatient = await response.json();
+      setPatients(prev => prev.map(p => p.id === patient.id ? updatedPatient : p));
+      return responsePatient;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to assign patient to doctor');
       throw err;

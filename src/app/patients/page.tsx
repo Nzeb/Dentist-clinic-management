@@ -239,7 +239,7 @@ export default function PatientsPage() {
                 <TableCell>
                   <Select
                     value={patient.assigned_doctor_id?.toString() || ''}
-                    onValueChange={(value) => assignPatientToDoctor(patient.id, parseInt(value))}
+                    onValueChange={(value) => assignPatientToDoctor(patient, parseInt(value))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Assign Doctor" />
