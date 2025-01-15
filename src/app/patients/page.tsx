@@ -480,30 +480,34 @@ export default function PatientsPage() {
                         </CardHeader>
                         <CardContent className="overflow-auto">
                           <ul className="space-y-4">
-                            {[...history, ...prescriptions]
-                              .filter(item => 'patientId' in item && item.patientId === selectedPatient.id)
-                              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                              .map((item, index) => (
-                                <li key={index} className="flex items-start space-x-4">
-                                  {'description' in item ? (
-                                    <>
-                                      <FileText className="h-5 w-5 mt-1" />
-                                      <div>
-                                        <p><strong>{item.date}</strong></p>
-                                        <p>{item.description}</p>
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Calendar className="h-5 w-5 mt-1" />
-                                      <div>
-                                        <p><strong>{item.date}</strong></p>
-                                        <p>Prescription: {item.medication}</p>
-                                      </div>
-                                    </>
-                                  )}
-                                </li>
-                              ))}
+                            {patientData ? (
+                              [...(patientData.history || []), ...(patientData.prescriptions || [])]
+                                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                .map((item, index) => (
+                                  <li key={index} className="flex items-start space-x-4">
+                                    {'description' in item ? (
+                                      <>
+                                        <FileText className="h-5 w-5 mt-1" />
+                                        <div>
+                                          <p><strong>{item.date}</strong></p>
+                                          <p>{item.description}</p>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Calendar className="h-5 w-5 mt-1" />
+                                        <div>
+                                          <p><strong>{item.date}</strong></p>
+                                          <p>Prescription: {item.medication}</p>
+                                        </div>
+                                      </>
+                                    )}
+                                  </li>
+                                ))
+                            ) : (
+                              <li>Loading patient data...</li>
+                            )}
+
                           </ul>
                         </CardContent>
                       </Card>
