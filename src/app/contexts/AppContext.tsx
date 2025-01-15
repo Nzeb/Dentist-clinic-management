@@ -330,7 +330,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // historyRes,
           // prescriptionsRes,
           // notificationsRes,
-          // doctorsRes
+          doctorsRes
         ] = await Promise.all([
           fetch('/api/patients'),
           fetch('/api/appointments'),
@@ -339,7 +339,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // fetch('/api/history'),
           // fetch('/api/prescriptions'),
           // fetch('/api/notifications'),
-          // fetch('/api/doctors')
+          fetch('/api/doctors')
         ]);
 
         const [
@@ -350,7 +350,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // historyData,
           // prescriptionsData,
           // notificationsData,
-          // doctorsData
+          doctorsData
         ] = await Promise.all([
           patientsRes.json(),
           appointmentsRes.json(),
@@ -359,7 +359,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // historyRes.json(),
           // prescriptionsRes.json(),
           // notificationsRes.json(),
-          // doctorsRes.json()
+          doctorsRes.json()
         ]);
 
         console.log('Db patients: ', patientsData);
@@ -371,7 +371,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // setHistory(historyData);
         // setPrescriptions(prescriptionsData);
         // setNotifications(notificationsData);
-        // setDoctors(doctorsData);
+        setDoctors(doctorsData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred while loading data');
         console.error('Error loading initial data:', err);
@@ -451,6 +451,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
   
   const updateDoctor = async (id: number, doctor: Partial<DBDoctor>) => {
+    console.log("update doctor function called: ", id);
+    console.log(doctor);
     try {
       const response = await fetch(`/api/doctors/${id}`, {
         method: 'PUT',

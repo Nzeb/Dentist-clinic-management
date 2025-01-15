@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { DoctorService } from '@/server/services/doctorService';
 
-export async function PATCH(
+export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {

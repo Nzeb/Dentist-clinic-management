@@ -30,6 +30,8 @@ export default function PatientsPage() {
   const [filterCriteria, setFilterCriteria] = useState<'all' | 'recent' | 'overdue'>('all')
   const [addPatientDialogOpen, setAddPatientDialogOpen] = useState(false)
 
+  console.log("Doctors: ", doctors);
+
   const filteredPatients = patients.filter(patient => {
     const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
