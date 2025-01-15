@@ -116,15 +116,19 @@ export default function PatientsPage() {
     }
   }
 
-  const handleAddPrescription = async (prescription: { date: string; medication: string; dosage: string; instructions: string; renewal_date: string }) => {
+  const handleAddPrescription = async (prescription: { date: string; medication: string; dosage: string; instructions: string; renewalDate: string }) => {
     if (selectedPatient) {
       await addPrescription({
         patient_id: selectedPatient.id,
-        ...prescription,
         doctor_id: user?.id ?? 0,
         frequency: '',
         duration: '',
-        status: 'active'
+        status: 'active',
+        renewal_date: prescription.renewalDate,
+        date: prescription.date,
+        medication: prescription.medication,
+        dosage: prescription.dosage,
+        instructions: prescription.instructions
       })
       // setSelectedPatient(null)
     }
