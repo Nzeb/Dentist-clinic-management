@@ -292,6 +292,7 @@ interface AppContextType {
   addHistoryEntry: (entry: Omit<DBHistoryEntry, 'id'>) => Promise<DBHistoryEntry>;
   updateHistoryEntry: (id: number, entry: Partial<DBHistoryEntry>) => Promise<DBHistoryEntry | null>;
   deleteHistoryEntry: (id: number) => Promise<boolean>;
+  getPatientHistory: (patientId: number) => Promise<DBHistoryEntry[]>;
 
   // Prescription functions
   addPrescription: (prescription: Omit<DBPrescription, 'id'>) => Promise<DBPrescription>;
@@ -667,8 +668,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const getPatientHistory = async (patientId: number) => {
+    console.log("API CALL for patient history: ", patientId)
+    try {
+      const response = await fetch(`/api/history/${patientId}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch patient history');
+
+      const history = await response.json();
+      setHistory(history);
+      return history;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch patient history');
+      throw err;
+    }
+  };
+
   // Prescription functions
   const addPrescription = async (prescription: Omit<DBPrescription, 'id'>) => {
+    console.log("add prescription function called");
+    console.log(prescription);
     try {
       const response = await fetch('/api/prescriptions', {
         method: 'POST',
@@ -830,6 +851,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addHistoryEntry,
       updateHistoryEntry,
       deleteHistoryEntry,
+      getPatientHistory,
       addPrescription,
       updatePrescription,
       deletePrescription,

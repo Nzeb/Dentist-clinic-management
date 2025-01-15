@@ -16,21 +16,29 @@ import { AddHistoryEntry } from '../components/AddHistoryEntry'
 import { AddPrescription } from '../components/AddPrescription'
 import { SpecialNotes } from '../components/SpecialNotes'
 import { Label } from "@/components/ui/label"
+import { DBHistoryEntry, DBPatient, DBPrescription } from '@/types/db'
+import { set } from 'react-hook-form'
 
 export default function PatientsPage() {
   const { 
     patients, doctors, history, prescriptions, notifications,
-    addPatient, updatePatient, addHistoryEntry, updateHistoryEntry, deleteHistoryEntry,
+    addPatient, updatePatient, addHistoryEntry, updateHistoryEntry, deleteHistoryEntry, getPatientHistory,
     addPrescription, updatePrescription, deletePrescription,
     addNotification, deleteNotification, assignPatientToDoctor
   } = useAppContext()
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<typeof patients[0] | null>(null)
+  const [patientData, setPatientData] = useState<{
+    history: typeof history;
+    // prescriptions: typeof prescriptions;
+    // Add other patient-related data types as needed
+  } | null>(null)
   const [filterCriteria, setFilterCriteria] = useState<'all' | 'recent' | 'overdue'>('all')
   const [addPatientDialogOpen, setAddPatientDialogOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  console.log("Doctors: ", doctors);
+  // console.log("Doctors: ", doctors);
 
   const filteredPatients = patients.filter(patient => {
     const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,6 +61,48 @@ export default function PatientsPage() {
     return false
   })
 
+  // const handleSelectPatient = async(patient: DBPatient) => {
+  //   setSelectedPatient(patient)
+  //   const patientHistory = await getPatientHistory(patient.id)
+  //   setSelectedPatientHistory(patientHistory)
+  //   console.log("Patient history: ", selectedPatientHistory)
+
+  //   // const patientPrescription = await getPatientPrescription(patient.id)
+  //   // setSelectedPatientPrescription(patientPrescription)
+
+  // }
+
+  const handleSelectPatient = async (patient: DBPatient) => {
+    setIsLoading(true)
+    setSelectedPatient(patient)
+    
+    try {
+      // Fetch all patient data in parallel
+      const [
+        patientHistory,
+        // patientPrescriptions,
+        // Add other data fetching promises as needed
+      ] = await Promise.all([
+        getPatientHistory(patient.id),
+        // Add your getPatientPrescriptions function
+        // getPatientPrescriptions(patient.id),
+        // Add other data fetching functions
+      ])
+  
+      setPatientData({
+        history: patientHistory,
+        // prescriptions: patientPrescriptions,
+        // Set other fetched data
+      })
+    } catch (error) {
+      console.error("Failed to fetch patient data:", error)
+      // Handle error appropriately
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+
   const handleAddHistoryEntry = async (entry: { date: string; description: string; attachments: File[] }) => {
     if (selectedPatient) {
       await addHistoryEntry({
@@ -62,11 +112,11 @@ export default function PatientsPage() {
         doctor_id: user?.id ?? 0,
         attachments: entry.attachments.map(file => URL.createObjectURL(file))
       })
-      setSelectedPatient(null)
+      // setSelectedPatient(null)
     }
   }
 
-  const handleAddPrescription = async (prescription: { date: string; medication: string; dosage: string; instructions: string; renewalDate: string }) => {
+  const handleAddPrescription = async (prescription: { date: string; medication: string; dosage: string; instructions: string; renewal_date: string }) => {
     if (selectedPatient) {
       await addPrescription({
         patient_id: selectedPatient.id,
@@ -74,17 +124,16 @@ export default function PatientsPage() {
         doctor_id: user?.id ?? 0,
         frequency: '',
         duration: '',
-        renewal_date: '',
         status: 'active'
       })
-      setSelectedPatient(null)
+      // setSelectedPatient(null)
     }
   }
 
   const handleUpdateSpecialNotes = async (notes: string) => {
     if (selectedPatient) {
       await updatePatient(selectedPatient.id, { special_notes: notes })
-      setSelectedPatient(null)
+      // setSelectedPatient(null)
     }
   }
 
@@ -110,6 +159,57 @@ export default function PatientsPage() {
     printWindow?.document.close()
     printWindow?.print()
   }
+
+  // const fetchTabData = async (tabValue: string) => {
+  //   if(selectedPatient == null)
+  //     return;
+  //   switch (tabValue) {
+  //     case 'history':
+  //       try {
+  //         const history = getPatientHistory(selectedPatient?.id);
+  //         setHistory
+  //       } catch (error) {
+  //         console.error('Failed to fetch history:', error);
+  //       }
+  //       break;
+  
+  //     case 'prescriptions':
+  //       try {
+  //         // getPatientPrescription(selectedPatient?.id);
+  //       } catch (error) {
+  //         console.error('Failed to fetch prescriptions:', error);
+  //       }
+  //       break;
+  
+  //     case 'timeline':
+  //       // Fetch both history and prescriptions for timeline
+  //       try {
+  //         const [historyRes, prescriptionsRes] = await Promise.all([
+  //           fetch(`/api/patients/${selectedPatient.id}/history`),
+  //           fetch(`/api/patients/${selectedPatient.id}/prescriptions`)
+  //         ]);
+  //         const [historyData, prescriptionsData] = await Promise.all([
+  //           historyRes.json(),
+  //           prescriptionsRes.json()
+  //         ]);
+  //         setHistory(historyData);
+  //         setPrescriptions(prescriptionsData);
+  //       } catch (error) {
+  //         console.error('Failed to fetch timeline data:', error);
+  //       }
+  //       break;
+  
+  //     case 'details':
+  //       try {
+  //         const response = await fetch(`/api/patients/${selectedPatient.id}`);
+  //         const data = await response.json();
+  //         setSelectedPatient(data);
+  //       } catch (error) {
+  //         console.error('Failed to fetch patient details:', error);
+  //       }
+  //       break;
+  //   }
+  // };
 
   return (
     <div className="space-y-6">
@@ -230,7 +330,7 @@ export default function PatientsPage() {
         </TableHeader>
         <TableBody>
           {filteredPatients.map((patient) => (
-            <TableRow key={patient.id} onClick={() => setSelectedPatient(patient)} className="cursor-pointer">
+            <TableRow key={patient.id} onClick={() => handleSelectPatient(patient)} className="cursor-pointer">
               <TableCell className="font-medium">{patient.name}</TableCell>
               <TableCell>{patient.email}</TableCell>
               <TableCell>{patient.phone}</TableCell>
@@ -312,20 +412,22 @@ export default function PatientsPage() {
                             </CollapsibleContent>
                           </Collapsible>
                           <ul className="space-y-4 mt-4">
-                            {history
-                              .filter(entry => entry.patient_id === selectedPatient.id)
-                              .map(entry => (
-                                <li key={entry.id} className="border-b pb-2">
-                                  <p><strong>Date:</strong> {entry.date}</p>
-                                  <p>{entry.description}</p>
-                                  {entry.attachments.length > 0 && (
-                                    <div className="flex items-center mt-2">
-                                      <Paperclip className="h-4 w-4 mr-2" />
-                                      <span>{entry.attachments.length} attachment(s)</span>
-                                    </div>
-                                  )}
-                                </li>
-                              ))}
+                            {patientData?.history && patientData.history.length > 0 ? (
+                              patientData.history.filter(entry => entry.patient_id === selectedPatient.id)
+                                .map(entry => (
+                                  <li key={entry.id} className="border-b pb-2">
+                                    <p><strong>Date:</strong> {entry.date}</p>
+                                    <p>{entry.description}</p>
+                                    {entry.attachments.length > 0 && (
+                                      <div className="flex items-center mt-2">
+                                        <Paperclip className="h-4 w-4 mr-2" />
+                                        <span>{entry.attachments.length} attachment(s)</span>
+                                      </div>
+                                    )}
+                                  </li>
+                                ))) : (
+                                  <p>No prescriptions available</p>
+                                )}
                           </ul>
                         </CardContent>
                       </Card>

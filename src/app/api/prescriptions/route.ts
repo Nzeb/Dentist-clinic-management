@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error in POST /api/prescriptions:', error);
     return NextResponse.json(
-      { error: 'Failed to create prescription' },
+      { error: 'Failed to create prescription API Error' },
       { status: 500 }
     );
   }
