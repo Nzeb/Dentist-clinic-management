@@ -88,7 +88,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           patientsRes,
           appointmentsRes,
           treatmentsRes,
-          // invoicesRes,
+          invoicesRes,
           // historyRes,
           // prescriptionsRes,
           // notificationsRes,
@@ -97,7 +97,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           fetch('/api/patients'),
           fetch('/api/appointments'),
           fetch('/api/treatments'),
-          // fetch('/api/invoices'),
+          fetch('/api/invoices'),
           // fetch('/api/history'),
           // fetch('/api/prescriptions'),
           // fetch('/api/notifications'),
@@ -108,7 +108,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           patientsData,
           appointmentsData,
           treatmentsData,
-          // invoicesData,
+          invoicesData,
           // historyData,
           // prescriptionsData,
           // notificationsData,
@@ -117,7 +117,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           patientsRes.json(),
           appointmentsRes.json(),
           treatmentsRes.json(),
-          // invoicesRes.json(),
+          invoicesRes.json(),
           // historyRes.json(),
           // prescriptionsRes.json(),
           // notificationsRes.json(),
@@ -129,7 +129,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setPatients(patientsData);
         setAppointments(appointmentsData);
         setTreatments(treatmentsData);
-        // setInvoices(invoicesData);
+        setInvoices(invoicesData);
         // setHistory(historyData);
         // setPrescriptions(prescriptionsData);
         // setNotifications(notificationsData);
