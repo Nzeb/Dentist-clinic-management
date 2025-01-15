@@ -39,7 +39,8 @@ export default function TreatmentsPage() {
                 await addTreatment({
                   name: formData.get('name') as string,
                   duration: formData.get('duration') as string,
-                  price: formData.get('price') as string
+                  price: formData.get('price') as string,
+                  is_active: false
                 })
                 setAddTreatmentDialogOpen(false)
               }}>
@@ -86,33 +87,6 @@ export default function TreatmentsPage() {
           </DialogContent>
         </Dialog>
       )}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Treatments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Patient</TableHead>
-                <TableHead>Treatment</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Price</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {myPatients.slice(0, 3).map((patient, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{patient.name}</TableCell>
-                  <TableCell>{treatments[index % treatments.length].name}</TableCell>
-                  <TableCell>{new Date().toISOString().split('T')[0]}</TableCell>
-                  <TableCell>{treatments[index % treatments.length].price}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
     </div>
   )
 }

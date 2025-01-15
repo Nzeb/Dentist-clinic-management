@@ -375,7 +375,7 @@ export default function PatientsPage() {
                   <TabsTrigger value="history">History</TabsTrigger>
                   <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
                   <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                  <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                  {/* <TabsTrigger value="notifications">Notifications</TabsTrigger> */}
                 </TabsList>
                 <div className="flex-grow flex overflow-hidden">
                   <div className="flex-grow overflow-auto pr-4">
@@ -512,7 +512,7 @@ export default function PatientsPage() {
                         </CardContent>
                       </Card>
                     </TabsContent>
-                    <TabsContent value="notifications" className="h-full">
+                    {/* <TabsContent value="notifications" className="h-full">
                       <Card className="h-full">
                         <CardHeader>
                           <CardTitle>Notifications</CardTitle>
@@ -534,7 +534,7 @@ export default function PatientsPage() {
                           </ul>
                         </CardContent>
                       </Card>
-                    </TabsContent>
+                    </TabsContent> */}
                   </div>
                 </div>
               </Tabs>
