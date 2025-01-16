@@ -2,15 +2,15 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
-  DBPatient, 
-  DBAppointment, 
-  DBTreatment, 
-  DBInvoice, 
-  DBHistoryEntry, 
-  DBPrescription, 
-  DBNotification, 
-  DBDoctor 
+import {
+  DBPatient,
+  DBAppointment,
+  DBTreatment,
+  DBInvoice,
+  DBHistoryEntry,
+  DBPrescription,
+  DBNotification,
+  DBDoctor
 } from '@/types/db';
 
 interface AppContextType {
@@ -80,6 +80,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const isValidArray = <T,>(data: any): data is T[] => {
+      return Array.isArray(data);
+    };
+
     const loadInitialData = async () => {
       setIsLoading(true);
       setError(null);
@@ -124,16 +128,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
           doctorsRes.json()
         ]);
 
-        console.log('Db patients: ', patientsData);
+        // Handle patients data
+        if (!isValidArray<DBPatient>(patientsData)) {
+          console.warn('Invalid patients data received:', patientsData);
+          setPatients([]);
+        } else {
+          setPatients(patientsData);
+        }
 
-        setPatients(patientsData);
-        setAppointments(appointmentsData);
-        setTreatments(treatmentsData);
-        setInvoices(invoicesData);
-        // setHistory(historyData);
-        // setPrescriptions(prescriptionsData);
-        // setNotifications(notificationsData);
-        setDoctors(doctorsData);
+        // Handle appointments data
+        if (!isValidArray<DBAppointment>(appointmentsData)) {
+          console.warn('Invalid appointments data received:', appointmentsData);
+          setAppointments([]);
+        } else {
+          setAppointments(appointmentsData);
+        }
+
+        // Handle treatments data
+        if (!isValidArray<DBTreatment>(treatmentsData)) {
+          console.warn('Invalid treatments data received:', treatmentsData);
+          setTreatments([]);
+        } else {
+          setTreatments(treatmentsData);
+        }
+
+        // Handle invoices data
+        if (!isValidArray<DBInvoice>(invoicesData)) {
+          console.warn('Invalid invoices data received:', invoicesData);
+          setInvoices([]);
+        } else {
+          setInvoices(invoicesData);
+        }
+
+        // Handle doctors data
+        if (!isValidArray<DBDoctor>(doctorsData)) {
+          console.warn('Invalid doctors data received:', doctorsData);
+          setDoctors([]);
+        } else {
+          setDoctors(doctorsData);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred while loading data');
         console.error('Error loading initial data:', err);
@@ -158,11 +191,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(patient),
       });
 
-      if (!response.ok) throw new Error('Failed to create patient');
+      if (!response.ok) throw new Error('Failed to create patient Response not ok');
 
       const newPatient = await response.json();
-      setPatients(prev => [...prev, newPatient]);
-      return newPatient;
+      setPatients(prev => Array.isArray(prev) ? [...prev, newPatient] : [newPatient]);      return newPatient;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create patient');
       throw err;
@@ -198,11 +230,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify(doctor),
       });
-  
+
       if (!response.ok) {
         throw new Error('Failed to add doctor');
       }
-  
+
       const newDoctor = await response.json();
       setDoctors([...doctors, newDoctor]);
       return newDoctor;
@@ -211,7 +243,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Handle error (e.g., show toast notification)
     }
   };
-  
+
   const updateDoctor = async (id: number, doctor: Partial<DBDoctor>) => {
     console.log("update doctor function called: ", id);
     console.log(doctor);
@@ -223,11 +255,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify(doctor),
       });
-  
+
       if (!response.ok) {
         throw new Error('Failed to update doctor');
       }
-  
+
       const updatedDoctor = await response.json();
       setDoctors(doctors.map(d => d.id === id ? updatedDoctor : d));
       return updatedDoctor;
@@ -236,17 +268,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Handle error (e.g., show toast notification)
     }
   };
-  
+
   const deleteDoctor = async (id: number) => {
     try {
       const response = await fetch(`/api/doctors/${id}`, {
         method: 'DELETE',
       });
-  
+
+      // const response = await fetch(`/api/doctors/${id}`, {
+      //   method: 'GET',
+      // });
+
+      console.log("delete doctor function called: ", id);
+      console.log(response);
+
       if (!response.ok) {
         throw new Error('Failed to delete doctor');
       }
-  
+
       setDoctors(doctors.filter(d => d.id !== id));
       return true;
     } catch (err) {
@@ -255,7 +294,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Handle error (e.g., show toast notification)
     }
   };
-  
+
 
   // Appointment functions
   const addAppointment = async (appointment: Omit<DBAppointment, 'id'>) => {
@@ -575,21 +614,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const assignPatientToDoctor = async (patient: DBPatient, doctorId: number) => {
 
-    if(!patient) throw new Error('Patient not found');
+    if (!patient) throw new Error('Patient not found');
     try {
       // Update the patient's assigned doctor
       const updatedPatient = {
-          ...patient,
-          assigned_doctor_id: doctorId
+        ...patient,
+        assigned_doctor_id: doctorId
       };
 
       // Make PATCH request to update the patient
       const response = await fetch(`/api/patients/${patient.id}`, {
-          method: 'PATCH',
-          headers: {
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(updatedPatient)
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedPatient)
       });
 
       if (!response.ok) throw new Error('Failed to assign patient to doctor');
@@ -602,7 +641,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw err;
     }
   };
-  
+
   return (
     <AppContext.Provider value={{
       patients,

@@ -33,8 +33,6 @@ export default function DoctorsPage() {
         return <div>You do not have permission to view this page.</div>
     }
 
-    console.log("This one ?????????????????>>>>>>>>>>>>>>>>>>>>>>")
-
     // const filteredDoctors = doctors.filter(
     //     doctor => {
     //         console.log(doctor)

@@ -29,27 +29,27 @@ export async function PUT(
 }
 
 export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
-  ) {
-    try {
-        const data = await request.json();
-        const doctorService = new DoctorService();
-        const doctor = await doctorService.deleteDoctor(parseInt(params.id));
-        
-        if (!doctor) {
-          return NextResponse.json(
-            { error: 'doctor not found' },
-            { status: 404 }
-          );
-        }
-    
-        return NextResponse.json(doctor);
-      } catch (error) {
-        console.error('Error in Delete /api/doctors/[id]:', error);
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+
+      const doctorService = new DoctorService();
+      const doctor = await doctorService.deleteDoctor(parseInt(params.id));
+      
+      if (!doctor) {
         return NextResponse.json(
-          { error: 'Failed to update doctor' },
-          { status: 500 }
+          { error: 'doctor not found' },
+          { status: 404 }
         );
       }
+  
+      return NextResponse.json("True");
+  } catch (error) {
+      console.error('Error in Delete /api/doctors/[id]:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete doctor' },
+        { status: 500 }
+      );
   }
+}

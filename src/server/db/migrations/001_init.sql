@@ -15,7 +15,7 @@ CREATE TABLE patients (
   phone VARCHAR(20) NOT NULL,
   email VARCHAR(255),
   last_visit DATE NOT NULL,
-  assigned_doctor_id INTEGER REFERENCES doctors(id),
+  assigned_doctor_id INTEGER REFERENCES doctors(id) ON DELETE SET NULL,
   special_notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -106,4 +106,38 @@ CREATE TRIGGER update_patients_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Repeat for other tables...
+-- Add triggers for all tables
+CREATE TRIGGER update_doctors_updated_at
+    BEFORE UPDATE ON doctors
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_appointments_updated_at
+    BEFORE UPDATE ON appointments
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_treatments_updated_at
+    BEFORE UPDATE ON treatments
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_invoices_updated_at
+    BEFORE UPDATE ON invoices
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_history_entries_updated_at
+    BEFORE UPDATE ON history_entries
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_prescriptions_updated_at
+    BEFORE UPDATE ON prescriptions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_notifications_updated_at
+    BEFORE UPDATE ON notifications
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
