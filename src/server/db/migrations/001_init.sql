@@ -86,6 +86,7 @@ CREATE TYPE user_role AS ENUM ('admin', 'staff', 'doctor', 'reception');
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -111,6 +112,7 @@ CREATE INDEX idx_prescriptions_patient ON prescriptions(patient_id);
 CREATE INDEX idx_invoices_patient ON invoices(patient_id);
 CREATE INDEX idx_history_patient ON history_entries(patient_id);
 CREATE INDEX idx_notifications_patient ON notifications(patient_id);
+CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_is_active ON users(is_active);
 

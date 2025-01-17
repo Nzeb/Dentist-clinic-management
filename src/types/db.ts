@@ -201,14 +201,19 @@ export interface DBPatient {
     email: string;
     name: string;
     role: UserRole;
+    password: string;
     is_active: boolean;
     last_login?: string;
     created_at: string;
     updated_at: string;
   }
   
-  export type UserRole = 'admin' | 'doctor' | 'staff' | 'receptionist';
-  
+  export enum UserRole {
+    ADMIN = 'admin',
+    DOCTOR = 'doctor',
+    STAFF = 'staff',
+    RECEPTIONIST = 'reception',
+  }  
   // Permission related types
   export interface Permission {
     id: number;

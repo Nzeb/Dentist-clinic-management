@@ -1,11 +1,10 @@
 // userService.ts
 import { Pool } from 'pg';
 import { DBUser, UserRole } from '@/types/db';
-import bcrypt from 'bcryptjs';
+import bcryptjs from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { pool } from '../db/config';
 
-// Add a custom error type
 class DatabaseError extends Error {
   constructor(message: string) {
     super(message);
@@ -14,6 +13,7 @@ class DatabaseError extends Error {
 }
 
 interface CreateUserDto {
+  username: string;
   email: string;
   password: string;
   name: string;
@@ -21,6 +21,7 @@ interface CreateUserDto {
 }
 
 interface UpdateUserDto {
+  username?: string;
   email?: string;
   password?: string;
   name?: string;
@@ -28,12 +29,73 @@ interface UpdateUserDto {
   is_active?: boolean;
 }
 
+interface GetUsersOptions {
+    role?: UserRole;
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: 'username' | 'email' | 'name' | 'role' | 'created_at';
+    sortOrder?: 'ASC' | 'DESC';
+  }
+  
+  interface PaginatedUsers {
+    users: Omit<DBUser, 'password'>[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }
+
 class UserService {
   private readonly SALT_ROUNDS = 12;
+  private readonly DEFAULT_ADMIN = {
+    username: 'admin',
+    password: 'admin',
+    email: 'admin@system.local',
+    name: 'System Administrator',
+    role: UserRole.ADMIN
+  };
   private pool: Pool;
 
   constructor() {
     this.pool = pool;
+    this.ensureAdminExists().catch(error => {
+      console.error('Failed to create admin user:', error);
+    });
+  }
+
+  private async ensureAdminExists(): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Check if admin user exists
+      const adminQuery = `
+        SELECT id FROM users 
+        WHERE username = $1 AND role = $2
+      `;
+      const adminResult = await client.query(adminQuery, [
+        this.DEFAULT_ADMIN.username,
+        UserRole.ADMIN
+      ]);
+
+      if (adminResult.rows.length === 0) {
+        // Create admin user if it doesn't exist
+        await this.createUser(this.DEFAULT_ADMIN);
+        console.log('Default admin user created successfully');
+      }
+
+      await client.query('COMMIT');
+    } catch (error: unknown) {
+      await client.query('ROLLBACK');
+      if (error instanceof Error) {
+        throw new DatabaseError(`Failed to ensure admin exists: ${error.message}`);
+      }
+      throw new DatabaseError('Failed to ensure admin exists: Unknown error');
+    } finally {
+      client.release();
+    }
   }
 
   async createUser(userData: CreateUserDto): Promise<Omit<DBUser, 'password'>> {
@@ -41,10 +103,21 @@ class UserService {
     try {
       await client.query('BEGIN');
 
-      const hashedPassword = await bcrypt.hash(userData.password, this.SALT_ROUNDS);
+      // Check if username or email already exists
+      const existingUser = await client.query(
+        'SELECT id FROM users WHERE username = $1 OR email = $2',
+        [userData.username, userData.email]
+      );
+
+      if (existingUser.rows.length > 0) {
+        throw new DatabaseError('Username or email already exists');
+      }
+
+      const hashedPassword = await bcryptjs.hash(userData.password, this.SALT_ROUNDS);
 
       const query = `
         INSERT INTO users (
+          username,
           email, 
           password, 
           name, 
@@ -53,11 +126,12 @@ class UserService {
           created_at, 
           updated_at
         ) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7) 
-        RETURNING id, email, name, role, is_active, created_at, updated_at
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+        RETURNING id, username, email, name, role, is_active, created_at, updated_at
       `;
 
       const values = [
+        userData.username,
         userData.email,
         hashedPassword,
         userData.name,
@@ -81,10 +155,36 @@ class UserService {
     }
   }
 
+  async login(username: string, password: string): Promise<Omit<DBUser, 'password'> | null> {
+    try {
+      const query = `
+        SELECT id, username, email, password, name, role, is_active, created_at, updated_at
+        FROM users 
+        WHERE username = $1 AND is_active = true
+      `;
+      const result = await this.pool.query(query, [username]);
+      
+      if (result.rows.length === 0) return null;
+      
+      const user = result.rows[0];
+      const isValidPassword = await bcryptjs.compare(password, user.password);
+      
+      if (!isValidPassword) return null;
+      
+      const { password: _, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new DatabaseError(`Failed to login: ${error.message}`);
+      }
+      throw new DatabaseError('Failed to login: Unknown error');
+    }
+  }
+
   async getUserById(id: number): Promise<Omit<DBUser, 'password'> | null> {
     try {
       const query = `
-        SELECT id, email, name, role, is_active, created_at, updated_at 
+        SELECT id, username, email, name, role, is_active, created_at, updated_at 
         FROM users 
         WHERE id = $1 AND is_active = true
       `;
@@ -103,9 +203,27 @@ class UserService {
     try {
       await client.query('BEGIN');
 
+      // Check if username or email already exists if they're being updated
+      if (updateData.username || updateData.email) {
+        const existingUser = await client.query(
+          'SELECT id FROM users WHERE (username = $1 OR email = $2) AND id != $3',
+          [updateData.username, updateData.email, id]
+        );
+
+        if (existingUser.rows.length > 0) {
+          throw new DatabaseError('Username or email already exists');
+        }
+      }
+
       const updates: string[] = [];
       const values: any[] = [];
       let paramCount = 1;
+
+      if (updateData.username) {
+        updates.push(`username = $${paramCount}`);
+        values.push(updateData.username);
+        paramCount++;
+      }
 
       if (updateData.email) {
         updates.push(`email = $${paramCount}`);
@@ -114,7 +232,7 @@ class UserService {
       }
 
       if (updateData.password) {
-        const hashedPassword = await bcrypt.hash(updateData.password, this.SALT_ROUNDS);
+        const hashedPassword = await bcryptjs.hash(updateData.password, this.SALT_ROUNDS);
         updates.push(`password = $${paramCount}`);
         values.push(hashedPassword);
         paramCount++;
@@ -147,7 +265,7 @@ class UserService {
         UPDATE users 
         SET ${updates.join(', ')} 
         WHERE id = $${values.length} 
-        RETURNING id, email, name, role, is_active, created_at, updated_at
+        RETURNING id, username, email, name, role, is_active, created_at, updated_at
       `;
 
       const result = await client.query(query, values);
@@ -174,6 +292,18 @@ class UserService {
     try {
       await client.query('BEGIN');
 
+      // Check if user is the last admin
+      const user = await this.getUserById(id);
+      if (user?.role === UserRole.ADMIN) {
+        const adminCount = await client.query(
+          'SELECT COUNT(*) FROM users WHERE role = $1 AND is_active = true',
+          [UserRole.ADMIN]
+        );
+        if (adminCount.rows[0].count <= 1) {
+          throw new DatabaseError('Cannot delete the last admin user');
+        }
+      }
+
       const query = `
         UPDATE users 
         SET is_active = false, 
@@ -199,27 +329,7 @@ class UserService {
     }
   }
 
-  async verifyPassword(email: string, password: string): Promise<boolean> {
-    try {
-      const query = `
-        SELECT password 
-        FROM users 
-        WHERE email = $1 AND is_active = true
-      `;
-      const result = await this.pool.query(query, [email]);
-      
-      if (result.rows.length === 0) return false;
-      
-      return await bcrypt.compare(password, result.rows[0].password);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw new DatabaseError(`Failed to verify password: ${error.message}`);
-      }
-      throw new DatabaseError('Failed to verify password: Unknown error');
-    }
-  }
-
-  async generatePasswordResetToken(email: string): Promise<string> {
+  async generatePasswordResetToken(username: string): Promise<string> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -227,9 +337,9 @@ class UserService {
       const userQuery = `
         SELECT id 
         FROM users 
-        WHERE email = $1 AND is_active = true
+        WHERE username = $1 AND is_active = true
       `;
-      const userResult = await client.query(userQuery, [email]);
+      const userResult = await client.query(userQuery, [username]);
       
       if (userResult.rows.length === 0) {
         throw new DatabaseError('User not found');
@@ -237,7 +347,7 @@ class UserService {
 
       const userId = userResult.rows[0].id;
       const resetToken = randomBytes(32).toString('hex');
-      const hashedResetToken = await bcrypt.hash(resetToken, this.SALT_ROUNDS);
+      const hashedResetToken = await bcryptjs.hash(resetToken, this.SALT_ROUNDS);
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 1);
 
@@ -273,6 +383,206 @@ class UserService {
       throw new DatabaseError('Failed to generate reset token: Unknown error');
     } finally {
       client.release();
+    }
+  }
+
+  async resetPassword(username: string, token: string, newPassword: string): Promise<boolean> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const tokenQuery = `
+        SELECT prt.* 
+        FROM password_reset_tokens prt
+        JOIN users u ON u.id = prt.user_id
+        WHERE u.username = $1 AND u.is_active = true
+          AND prt.expires_at > NOW()
+      `;
+      const tokenResult = await client.query(tokenQuery, [username]);
+
+      if (tokenResult.rows.length === 0) {
+        return false;
+      }
+
+      const isValidToken = await bcryptjs.compare(token, tokenResult.rows[0].token);
+      if (!isValidToken) {
+        return false;
+      }
+
+      const hashedPassword = await bcryptjs.hash(newPassword, this.SALT_ROUNDS);
+      
+      const updateQuery = `
+        UPDATE users 
+        SET password = $1, 
+            updated_at = $2
+        WHERE username = $3
+      `;
+      await client.query(updateQuery, [
+        hashedPassword,
+        new Date().toISOString(),
+        username
+      ]);
+
+      // Delete the used token
+      await client.query(
+        'DELETE FROM password_reset_tokens WHERE user_id = $1',
+        [tokenResult.rows[0].user_id]
+      );
+
+      await client.query('COMMIT');
+      return true;
+    } catch (error: unknown) {
+      await client.query('ROLLBACK');
+      if (error instanceof Error) {
+        throw new DatabaseError(`Failed to reset password: ${error.message}`);
+      }
+      throw new DatabaseError('Failed to reset password: Unknown error');
+    } finally {
+      client.release();
+    }
+  }
+
+  async getUsers(options: GetUsersOptions = {}): Promise<PaginatedUsers> {
+    const client = await this.pool.connect();
+    try {
+      const {
+        role,
+        isActive = true,
+        search = '',
+        page = 1,
+        limit = 10,
+        sortBy = 'created_at',
+        sortOrder = 'DESC'
+      } = options;
+
+      // Build the WHERE clause
+      const whereConditions: string[] = ['1 = 1']; // Always true condition to start
+      const values: any[] = [];
+      let paramCount = 1;
+
+      // Add is_active condition
+      whereConditions.push(`is_active = $${paramCount}`);
+      values.push(isActive);
+      paramCount++;
+
+      // Add role condition if specified
+      if (role) {
+        whereConditions.push(`role = $${paramCount}`);
+        values.push(role);
+        paramCount++;
+      }
+
+      // Add search condition if specified
+      if (search) {
+        whereConditions.push(`(
+          username ILIKE $${paramCount} OR 
+          email ILIKE $${paramCount} OR 
+          name ILIKE $${paramCount}
+        )`);
+        values.push(`%${search}%`);
+        paramCount++;
+      }
+
+      // Calculate pagination
+      const offset = (page - 1) * limit;
+      values.push(limit);
+      values.push(offset);
+
+      // Build the final queries
+      const countQuery = `
+        SELECT COUNT(*) 
+        FROM users 
+        WHERE ${whereConditions.join(' AND ')}
+      `;
+
+      const selectQuery = `
+        SELECT 
+          id, 
+          username, 
+          email, 
+          name, 
+          role, 
+          is_active, 
+          created_at, 
+          updated_at
+        FROM users 
+        WHERE ${whereConditions.join(' AND ')}
+        ORDER BY ${sortBy} ${sortOrder}
+        LIMIT $${paramCount} 
+        OFFSET $${paramCount + 1}
+      `;
+
+      // Execute queries
+      const totalResult = await client.query(countQuery, values.slice(0, -2));
+      const total = parseInt(totalResult.rows[0].count);
+      const result = await client.query(selectQuery, values);
+
+      return {
+        users: result.rows,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new DatabaseError(`Failed to get users: ${error.message}`);
+      }
+      throw new DatabaseError('Failed to get users: Unknown error');
+    } finally {
+      client.release();
+    }
+  }
+
+  async getAllActiveUsers(): Promise<Omit<DBUser, 'password'>[]> {
+    try {
+      const query = `
+        SELECT 
+          id, 
+          username, 
+          email, 
+          name, 
+          role, 
+          is_active, 
+          created_at, 
+          updated_at
+        FROM users 
+        WHERE is_active = true
+        ORDER BY created_at DESC
+      `;
+      const result = await this.pool.query(query);
+      return result.rows;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new DatabaseError(`Failed to get all users: ${error.message}`);
+      }
+      throw new DatabaseError('Failed to get all users: Unknown error');
+    }
+  }
+
+  async getUsersByRole(role: UserRole): Promise<Omit<DBUser, 'password'>[]> {
+    try {
+      const query = `
+        SELECT 
+          id, 
+          username, 
+          email, 
+          name, 
+          role, 
+          is_active, 
+          created_at, 
+          updated_at
+        FROM users 
+        WHERE role = $1 AND is_active = true
+        ORDER BY created_at DESC
+      `;
+      const result = await this.pool.query(query, [role]);
+      return result.rows;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new DatabaseError(`Failed to get users by role: ${error.message}`);
+      }
+      throw new DatabaseError('Failed to get users by role: Unknown error');
     }
   }
 }
