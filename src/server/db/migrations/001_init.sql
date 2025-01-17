@@ -82,6 +82,27 @@ CREATE TABLE notifications (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TYPE user_role AS ENUM ('admin', 'staff', 'doctor', 'reception');
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    role user_role NOT NULL DEFAULT 'user',
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE TABLE password_reset_tokens (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id),
+    token VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+
 -- Create indexes
 CREATE INDEX idx_patients_assigned_doctor ON patients(assigned_doctor_id);
 CREATE INDEX idx_appointments_patient ON appointments(patient_id);
@@ -90,6 +111,8 @@ CREATE INDEX idx_prescriptions_patient ON prescriptions(patient_id);
 CREATE INDEX idx_invoices_patient ON invoices(patient_id);
 CREATE INDEX idx_history_patient ON history_entries(patient_id);
 CREATE INDEX idx_notifications_patient ON notifications(patient_id);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_is_active ON users(is_active);
 
 -- Create trigger for updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
