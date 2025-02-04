@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppContext } from '../contexts/AppContext'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from "@/components/ui/button"
@@ -17,92 +17,140 @@ import { AddPrescription } from '../components/AddPrescription'
 import { SpecialNotes } from '../components/SpecialNotes'
 import { Label } from "@/components/ui/label"
 import { DBHistoryEntry, DBPatient, DBPrescription } from '@/types/db'
-import { set } from 'react-hook-form'
 
 export default function PatientsPage() {
   const { 
-    patients, doctors, history, prescriptions, notifications,
-    addPatient, updatePatient, addHistoryEntry, updateHistoryEntry, deleteHistoryEntry, getPatientHistory,
-    addPrescription, updatePrescription, deletePrescription, getPatientPrescription,
-    addNotification, deleteNotification, assignPatientToDoctor
+    patients, 
+    doctors, 
+    history, 
+    prescriptions, 
+    notifications,
+    addPatient, 
+    updatePatient, // Ensure this is available in your context
+    addHistoryEntry, 
+    updateHistoryEntry, 
+    deleteHistoryEntry, 
+    getPatientHistory,
+    addPrescription, 
+    updatePrescription, 
+    deletePrescription, 
+    getPatientPrescription,
+    addNotification, 
+    deleteNotification, 
+    assignPatientToDoctor
   } = useAppContext()
+
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedPatient, setSelectedPatient] = useState<typeof patients[0] | null>(null)
+  const [selectedPatient, setSelectedPatient] = useState<DBPatient | null>(null)
   const [patientData, setPatientData] = useState<{
-    history: typeof history;
-    prescriptions: typeof prescriptions;
-    // Add other patient-related data types as needed
+    history: DBHistoryEntry[];
+    prescriptions: DBPrescription[];
   } | null>(null)
   const [filterCriteria, setFilterCriteria] = useState<'all' | 'recent' | 'overdue'>('all')
   const [addPatientDialogOpen, setAddPatientDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  // console.log("Doctors: ", doctors);
+  // 1. New States for Editing
+  const [isEditing, setIsEditing] = useState(false)
+  // We'll store each patient field as a string, converting numbers to strings, etc.
+  const [editData, setEditData] = useState({
+    name: '',
+    age: '',
+    sex: '',
+    address: '',
+    phone: '',
+    email: '',
+    last_visit: '',
+  })
 
-  const filteredPatients = (patients || []).filter(patient => {
-    const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  // Filter patients
+  const filteredPatients = (patients || []).filter((patient) => {
+    const matchesSearch =
+      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.phone.includes(searchTerm)
 
     if (filterCriteria === 'all') return matchesSearch
+
     if (filterCriteria === 'recent') {
       const lastVisitDate = new Date(patient.last_visit)
       const oneMonthAgo = new Date()
       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
       return matchesSearch && lastVisitDate >= oneMonthAgo
     }
+
     if (filterCriteria === 'overdue') {
       const lastVisitDate = new Date(patient.last_visit)
       const sixMonthsAgo = new Date()
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
       return matchesSearch && lastVisitDate < sixMonthsAgo
     }
+
     return false
   })
 
-  // const handleSelectPatient = async(patient: DBPatient) => {
-  //   setSelectedPatient(patient)
-  //   const patientHistory = await getPatientHistory(patient.id)
-  //   setSelectedPatientHistory(patientHistory)
-  //   console.log("Patient history: ", selectedPatientHistory)
-
-  //   // const patientPrescription = await getPatientPrescription(patient.id)
-  //   // setSelectedPatientPrescription(patientPrescription)
-
-  // }
-
+  // 2. When a patient is selected, fetch data and also populate editData
   const handleSelectPatient = async (patient: DBPatient) => {
     setIsLoading(true)
     setSelectedPatient(patient)
-    
+    setIsEditing(false) // reset editing mode if any
     try {
-      // Fetch all patient data in parallel
-      const [
-        patientHistory,
-        patientPrescriptions,
-        // Add other data fetching promises as needed
-      ] = await Promise.all([
+      const [patientHistory, patientPrescriptions] = await Promise.all([
         getPatientHistory(patient.id),
-        // Add your getPatientPrescriptions function
         getPatientPrescription(patient.id),
-        // Add other data fetching functions
       ])
-  
+
       setPatientData({
         history: patientHistory,
         prescriptions: patientPrescriptions,
-        // Set other fetched data
+      })
+
+      // Populate editData from the selected patient
+      setEditData({
+        name: patient.name,
+        age: patient.age?.toString() || '', // convert number -> string for input
+        sex: patient.sex || '',            // if null or undefined, store empty string
+        address: patient.address || '',
+        phone: patient.phone,
+        email: patient.email || '',
+        last_visit: patient.last_visit,
       })
     } catch (error) {
       console.error("Failed to fetch patient data:", error)
-      // Handle error appropriately
     } finally {
       setIsLoading(false)
     }
   }
 
+  // 3. Handler for saving the edits
+  const handleSaveEdits = async () => {
+    if (!selectedPatient) return
 
+    try {
+      // Convert editData fields to the correct types if needed
+      const updatedData: Partial<DBPatient> = {
+        name: editData.name,
+        age: editData.age ? parseInt(editData.age) : undefined,
+        // If user picks 'not_provided', treat it as undefined (optional)
+        sex: editData.sex || undefined,
+        address: editData.address || undefined,
+        phone: editData.phone,
+        email: editData.email || undefined,
+        last_visit: editData.last_visit, 
+      }
+
+      await updatePatient(selectedPatient.id, updatedData)
+
+      // Update the local selectedPatient so it reflects changes in the UI
+      setSelectedPatient({ ...selectedPatient, ...updatedData })
+      setIsEditing(false)
+    } catch (error) {
+      console.error("Error updating patient:", error)
+    }
+  }
+
+  // Handle new history entry
   const handleAddHistoryEntry = async (entry: { date: string; description: string; attachments: File[] }) => {
     if (selectedPatient) {
       await addHistoryEntry({
@@ -112,10 +160,10 @@ export default function PatientsPage() {
         doctor_id: user?.id ?? 0,
         attachments: entry.attachments.map(file => URL.createObjectURL(file))
       })
-      // setSelectedPatient(null)
     }
   }
 
+  // Handle new prescription
   const handleAddPrescription = async (prescription: { date: string; medication: string; dosage: string; instructions: string; renewalDate: string }) => {
     if (selectedPatient) {
       await addPrescription({
@@ -130,18 +178,20 @@ export default function PatientsPage() {
         dosage: prescription.dosage,
         instructions: prescription.instructions
       })
-      // setSelectedPatient(null)
     }
   }
 
+  // Handle updating special notes
   const handleUpdateSpecialNotes = async (notes: string) => {
     if (selectedPatient) {
       await updatePatient(selectedPatient.id, { special_notes: notes })
-      // setSelectedPatient(null)
+      // Optionally update local state
+      setSelectedPatient({ ...selectedPatient, special_notes: notes })
     }
   }
 
-  const printPrescription = (prescription: typeof prescriptions[0]) => {
+  // Print Prescription
+  const printPrescription = (prescription: DBPrescription) => {
     const patient = patients.find(p => p.id === prescription.patient_id)
     const doctor = doctors.find(d => d.id === patient?.assigned_doctor_id)
     
@@ -157,66 +207,18 @@ export default function PatientsPage() {
     `
 
     const printWindow = window.open('', '_blank')
-    printWindow?.document.write('<html><head><title>Prescription</title></head><body>')
-    printWindow?.document.write(prescriptionContent)
-    printWindow?.document.write('</body></html>')
-    printWindow?.document.close()
-    printWindow?.print()
+    if (printWindow) {
+      printWindow.document.write('<html><head><title>Prescription</title></head><body>')
+      printWindow.document.write(prescriptionContent)
+      printWindow.document.write('</body></html>')
+      printWindow.document.close()
+      printWindow.print()
+    }
   }
-
-  // const fetchTabData = async (tabValue: string) => {
-  //   if(selectedPatient == null)
-  //     return;
-  //   switch (tabValue) {
-  //     case 'history':
-  //       try {
-  //         const history = getPatientHistory(selectedPatient?.id);
-  //         setHistory
-  //       } catch (error) {
-  //         console.error('Failed to fetch history:', error);
-  //       }
-  //       break;
-  
-  //     case 'prescriptions':
-  //       try {
-  //         // getPatientPrescription(selectedPatient?.id);
-  //       } catch (error) {
-  //         console.error('Failed to fetch prescriptions:', error);
-  //       }
-  //       break;
-  
-  //     case 'timeline':
-  //       // Fetch both history and prescriptions for timeline
-  //       try {
-  //         const [historyRes, prescriptionsRes] = await Promise.all([
-  //           fetch(`/api/patients/${selectedPatient.id}/history`),
-  //           fetch(`/api/patients/${selectedPatient.id}/prescriptions`)
-  //         ]);
-  //         const [historyData, prescriptionsData] = await Promise.all([
-  //           historyRes.json(),
-  //           prescriptionsRes.json()
-  //         ]);
-  //         setHistory(historyData);
-  //         setPrescriptions(prescriptionsData);
-  //       } catch (error) {
-  //         console.error('Failed to fetch timeline data:', error);
-  //       }
-  //       break;
-  
-  //     case 'details':
-  //       try {
-  //         const response = await fetch(`/api/patients/${selectedPatient.id}`);
-  //         const data = await response.json();
-  //         setSelectedPatient(data);
-  //       } catch (error) {
-  //         console.error('Failed to fetch patient details:', error);
-  //       }
-  //       break;
-  //   }
-  // };
 
   return (
     <div className="space-y-6">
+      {/* Heading + Add button */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Patients</h1>
         {user?.role === 'admin' && (
@@ -301,6 +303,8 @@ export default function PatientsPage() {
           </Dialog>
         )}
       </div>
+
+      {/* Search & Filter */}
       <div className="flex items-center space-x-2">
         <Input 
           placeholder="Search patients..." 
@@ -308,7 +312,10 @@ export default function PatientsPage() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <Select value={filterCriteria} onValueChange={(value: 'all' | 'recent' | 'overdue') => setFilterCriteria(value)}>
+        <Select 
+          value={filterCriteria} 
+          onValueChange={(value: 'all' | 'recent' | 'overdue') => setFilterCriteria(value)}
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter patients" />
           </SelectTrigger>
@@ -322,6 +329,8 @@ export default function PatientsPage() {
           <Search className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Patients Table */}
       <Table>
         <TableHeader>
           <TableRow>
@@ -334,7 +343,11 @@ export default function PatientsPage() {
         </TableHeader>
         <TableBody>
           {filteredPatients.map((patient) => (
-            <TableRow key={patient.id} onClick={() => handleSelectPatient(patient)} className="cursor-pointer">
+            <TableRow 
+              key={patient.id} 
+              onClick={() => handleSelectPatient(patient)} 
+              className="cursor-pointer"
+            >
               <TableCell className="font-medium">{patient.name}</TableCell>
               <TableCell>{patient.email}</TableCell>
               <TableCell>{patient.phone}</TableCell>
@@ -342,13 +355,24 @@ export default function PatientsPage() {
               {user?.role === 'admin' && (
                 <TableCell>
                   <Select
-                    value={patient.assigned_doctor_id?.toString() || ''}
-                    onValueChange={(value) => assignPatientToDoctor(patient, parseInt(value))}
+                    // If assigned_doctor_id is null, fallback to 'none' or some valid string
+                    value={patient.assigned_doctor_id ? patient.assigned_doctor_id.toString() : 'none'}
+                    onValueChange={(value) => {
+                      if (value === 'none') {
+                        // Optionally implement an 'unassign' logic, e.g. pass null
+                        assignPatientToDoctor(patient, 0)
+
+                      } else {
+                        assignPatientToDoctor(patient, parseInt(value))
+                      }
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Assign Doctor" />
                     </SelectTrigger>
                     <SelectContent>
+                      {/* Provide an item for 'none' if doctor is not assigned */}
+                      <SelectItem value="none">Unassigned</SelectItem>
                       {doctors.map((doctor) => (
                         <SelectItem key={doctor.id} value={doctor.id.toString()}>
                           {doctor.name}
@@ -362,12 +386,18 @@ export default function PatientsPage() {
           ))}
         </TableBody>
       </Table>
+
+      {/* Patient Details Dialog */}
       {selectedPatient && (
-        <Dialog open={!!selectedPatient} onOpenChange={(open) => !open && setSelectedPatient(null)}>
+        <Dialog 
+          open={!!selectedPatient} 
+          onOpenChange={(open) => !open && setSelectedPatient(null)}
+        >
           <DialogContent className="max-w-4xl w-5/6 h-5/6 flex flex-col overflow-hidden">
             <DialogHeader>
               <DialogTitle>Patient Details</DialogTitle>
             </DialogHeader>
+            
             <div className="flex-grow flex overflow-hidden">
               <Tabs defaultValue="details" className="flex-grow flex flex-col overflow-hidden">
                 <TabsList className="mb-4">
@@ -377,24 +407,150 @@ export default function PatientsPage() {
                   <TabsTrigger value="timeline">Timeline</TabsTrigger>
                   {/* <TabsTrigger value="notifications">Notifications</TabsTrigger> */}
                 </TabsList>
+                
                 <div className="flex-grow flex overflow-hidden">
                   <div className="flex-grow overflow-auto pr-4">
+                    
+                    {/* DETAILS TAB */}
                     <TabsContent value="details" className="h-full">
                       <Card className="h-full">
-                        <CardHeader>
-                          <CardTitle>{selectedPatient.name}</CardTitle>
+                        {/* Header with Edit/Cancel Button */}
+                        <CardHeader className="flex justify-between items-center">
+                          <CardTitle>
+                            {isEditing ? 'Edit Patient Details' : selectedPatient.name}
+                          </CardTitle>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setIsEditing(!isEditing)}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            {isEditing ? 'Cancel' : 'Edit'}
+                          </Button>
                         </CardHeader>
+                        
                         <CardContent>
-                          <p><strong>Age:</strong> {selectedPatient.age || 'Not provided'}</p>
-                          <p><strong>Sex:</strong> {selectedPatient.sex || 'Not provided'}</p>
-                          <p><strong>Address:</strong> {selectedPatient.address || 'Not provided'}</p>
-                          <p><strong>Phone:</strong> {selectedPatient.phone}</p>
-                          <p><strong>Email:</strong> {selectedPatient.email || 'Not provided'}</p>
-                          <p><strong>Last Visit:</strong> {selectedPatient.last_visit}</p>
-                          <p><strong>Assigned Doctor:</strong> {doctors.find(d => d.id === selectedPatient.assigned_doctor_id)?.name || 'Not assigned'}</p>
+                          {isEditing ? (
+                            <div className="space-y-4">
+                              {/* Name */}
+                              <div>
+                                <Label className="block font-semibold" htmlFor="editName">
+                                  Name
+                                </Label>
+                                <Input
+                                  id="editName"
+                                  value={editData.name}
+                                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                                />
+                              </div>
+
+                              {/* Age */}
+                              <div>
+                                <Label className="block font-semibold" htmlFor="editAge">
+                                  Age
+                                </Label>
+                                <Input
+                                  id="editAge"
+                                  type="number"
+                                  value={editData.age}
+                                  onChange={(e) => setEditData({ ...editData, age: e.target.value })}
+                                />
+                              </div>
+
+                              {/* Sex */}
+                              <div>
+                                <Label className="block font-semibold">Sex</Label>
+                                <Select
+                                  value={editData.sex}
+                                  onValueChange={(val) => setEditData({ ...editData, sex: val })}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select Sex" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {/* No empty-string value to avoid errors */}
+                                    {/* If you want a 'Not Provided' option, do this instead:
+                                        <SelectItem value="not_provided">Not Provided</SelectItem>
+                                    */}
+                                    <SelectItem value="male">Male</SelectItem>
+                                    <SelectItem value="female">Female</SelectItem>
+                                    <SelectItem value="other">Other</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Address */}
+                              <div>
+                                <Label className="block font-semibold" htmlFor="editAddress">
+                                  Address
+                                </Label>
+                                <Input
+                                  id="editAddress"
+                                  value={editData.address}
+                                  onChange={(e) => setEditData({ ...editData, address: e.target.value })}
+                                />
+                              </div>
+
+                              {/* Phone */}
+                              <div>
+                                <Label className="block font-semibold" htmlFor="editPhone">
+                                  Phone
+                                </Label>
+                                <Input
+                                  id="editPhone"
+                                  value={editData.phone}
+                                  onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                                />
+                              </div>
+
+                              {/* Email */}
+                              <div>
+                                <Label className="block font-semibold" htmlFor="editEmail">
+                                  Email
+                                </Label>
+                                <Input
+                                  id="editEmail"
+                                  type="email"
+                                  value={editData.email}
+                                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                                />
+                              </div>
+
+                              {/* Last Visit */}
+                              <div>
+                                <Label className="block font-semibold" htmlFor="editLastVisit">
+                                  Last Visit
+                                </Label>
+                                <Input
+                                  id="editLastVisit"
+                                  type="date"
+                                  value={editData.last_visit}
+                                  onChange={(e) => setEditData({ ...editData, last_visit: e.target.value })}
+                                />
+                              </div>
+
+                              <Button onClick={handleSaveEdits}>Save</Button>
+                            </div>
+                          ) : (
+                            // Read-only fields
+                            <div className="space-y-2">
+                              <p><strong>Age:</strong> {selectedPatient.age ?? 'Not provided'}</p>
+                              <p><strong>Sex:</strong> {selectedPatient.sex ?? 'Not provided'}</p>
+                              <p><strong>Address:</strong> {selectedPatient.address ?? 'Not provided'}</p>
+                              <p><strong>Phone:</strong> {selectedPatient.phone}</p>
+                              <p><strong>Email:</strong> {selectedPatient.email ?? 'Not provided'}</p>
+                              <p><strong>Last Visit:</strong> {selectedPatient.last_visit}</p>
+                              <p>
+                                <strong>Assigned Doctor:</strong>{' '}
+                                {doctors.find(d => d.id === selectedPatient.assigned_doctor_id)?.name || 'Not assigned'}
+                              </p>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     </TabsContent>
+
+                    {/* HISTORY TAB */}
                     <TabsContent value="history" className="h-full">
                       <Card className="h-full">
                         <CardHeader>
@@ -417,7 +573,8 @@ export default function PatientsPage() {
                           </Collapsible>
                           <ul className="space-y-4 mt-4">
                             {patientData?.history && patientData.history.length > 0 ? (
-                              patientData.history.filter(entry => entry.patient_id === selectedPatient.id)
+                              patientData.history
+                                .filter(entry => entry.patient_id === selectedPatient.id)
                                 .map(entry => (
                                   <li key={entry.id} className="border-b pb-2">
                                     <p><strong>Date:</strong> {entry.date}</p>
@@ -429,13 +586,16 @@ export default function PatientsPage() {
                                       </div>
                                     )}
                                   </li>
-                                ))) : (
-                                  <p>No prescriptions available</p>
-                                )}
+                                ))
+                            ) : (
+                              <p>No history entries available</p>
+                            )}
                           </ul>
                         </CardContent>
                       </Card>
                     </TabsContent>
+
+                    {/* PRESCRIPTIONS TAB */}
                     <TabsContent value="prescriptions" className="h-full">
                       <Card className="h-full">
                         <CardHeader>
@@ -466,13 +626,16 @@ export default function PatientsPage() {
                                       <Printer className="h-4 w-4 mr-2" /> Print Prescription
                                     </Button>
                                   </li>
-                                ))) : (
+                                ))
+                            ) : (
                               <p>No prescriptions available</p>
                             )}
                           </ul>
                         </CardContent>
                       </Card>
                     </TabsContent>
+
+                    {/* TIMELINE TAB */}
                     <TabsContent value="timeline" className="h-full">
                       <Card className="h-full">
                         <CardHeader>
@@ -507,12 +670,13 @@ export default function PatientsPage() {
                             ) : (
                               <li>Loading patient data...</li>
                             )}
-
                           </ul>
                         </CardContent>
                       </Card>
                     </TabsContent>
-                    {/* <TabsContent value="notifications" className="h-full">
+
+                    {/* Uncomment if you want to re-enable Notifications
+                    <TabsContent value="notifications" className="h-full">
                       <Card className="h-full">
                         <CardHeader>
                           <CardTitle>Notifications</CardTitle>
@@ -534,7 +698,8 @@ export default function PatientsPage() {
                           </ul>
                         </CardContent>
                       </Card>
-                    </TabsContent> */}
+                    </TabsContent>
+                    */}
                   </div>
                 </div>
               </Tabs>
@@ -545,4 +710,3 @@ export default function PatientsPage() {
     </div>
   )
 }
-
