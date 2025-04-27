@@ -1,50 +1,81 @@
-# Enable script execution
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+# Define variables
+$repoUrl = "https://github.com/Nzeb/Dentist-clinic-management"
+$repoDir = "Dentist-clinic-management"
+$nodeVersion = "16.0.0"
+$pnpmVersion = "6.0.0"
+$psqlUser = "postgres"
+$psqlPassword = "postgres"  # Replace with the actual default password
+$psqlDb = "dentist_clinic"
+$sqlFile = "$repoDir\src\server\db\migrations\001_init.sql"
+$envDevFile = "$repoDir\.env-dev"
+$envFile = "$repoDir\.env"
 
-# Check if Node.js is installed
-if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-    Write-Output "Node.js not found. Installing Node.js..."
-    Invoke-WebRequest -Uri "https://nodejs.org/dist/v16.14.0/node-v16.14.0-x64.msi" -OutFile "nodejs.msi"
-    Start-Process -FilePath "msiexec.exe" -ArgumentList "/i nodejs.msi /quiet" -Wait
-    Remove-Item -Path "nodejs.msi"
-} else {
-    Write-Output "Node.js is already installed."
+# Clone the repository if it doesn't exist
+if (-Not (Test-Path $repoDir)) {
+    git clone $repoUrl
 }
 
-# Check if pnpm is installed
-if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
-    Write-Output "pnpm not found. Installing pnpm..."
-    npm install -g pnpm
-} else {
-    Write-Output "pnpm is already installed."
+# Install Node.js if not installed
+if (-Not (Get-Command node -ErrorAction SilentlyContinue)) {
+    Invoke-WebRequest "https://nodejs.org/dist/v$nodeVersion/node-v$nodeVersion-x64.msi" -OutFile "nodejs.msi"
+    Start-Process "msiexec.exe" -ArgumentList "/i nodejs.msi /quiet" -Wait
+    Remove-Item "nodejs.msi"
 }
 
-# Check if PostgreSQL is installed
-if (-not (Get-Command psql -ErrorAction SilentlyContinue)) {
-    Write-Output "PostgreSQL not found. Installing PostgreSQL..."
-    Invoke-WebRequest -Uri "https://get.enterprisedb.com/postgresql/postgresql-13.3-1-windows-x64.exe" -OutFile "postgresql.exe"
-    Start-Process -FilePath "postgresql.exe" -ArgumentList "/S /D=C:\PostgreSQL" -Wait
-    Remove-Item -Path "postgresql.exe"
-    $env:PATH += ";C:\PostgreSQL\bin"
-} else {
-    Write-Output "PostgreSQL is already installed."
+# Install pnpm if not installed
+if (-Not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
+    npm install -g pnpm@$pnpmVersion
 }
 
-# Execute SQL file to create tables and user
-Write-Output "Setting up PostgreSQL database..."
-$psqlCommand = "psql -U postgres -f .\database.sql"
-Invoke-Expression $psqlCommand
-
-# Navigate to the Next.js application directory
-Set-Location -Path $PSScriptRoot
-# Install Node.js modules
-if (-not (Test-Path "node_modules")) {
-    Write-Output "Installing Node.js modules..."
-    pnpm install
-} else {
-    Write-Output "Node.js modules are already installed."
+# Install PostgreSQL if not installed
+if (-Not (Get-Command psql -ErrorAction SilentlyContinue)) {
+    Invoke-WebRequest "https://get.enterprisedb.com/postgresql/postgresql-13.3-1-windows-x64.exe" -OutFile "postgresql.exe"
+    Start-Process "postgresql.exe" -ArgumentList "--mode unattended" -Wait
+    Remove-Item "postgresql.exe"
 }
 
-# Start the Next.js application
-Write-Output "Starting the Next.js application..."
-pnpm dev
+# Debugging: List contents of the repository directory
+Write-Host "Listing contents of the repository directory:"
+Get-ChildItem -Path $repoDir
+
+# Debugging: Check if the .env-dev file exists
+Write-Host "Checking if .env-dev file exists at path: $envDevFile"
+if (Test-Path $envDevFile) {
+    Write-Host ".env-dev file found. Renaming to .env..."
+    try {
+        Rename-Item -Path $envDevFile -NewName ".env"
+        Write-Host "Renamed .env-dev to .env successfully."
+    } catch {
+        Write-Host "Failed to rename .env-dev to .env: $_"
+    }
+} else {
+    Write-Host ".env-dev file not found at path: $envDevFile"
+}
+
+
+
+# Debugging: Check if the SQL file exists
+Write-Host "Checking if SQL file exists at path: $sqlFile"
+if (Test-Path $sqlFile) {
+     Write-Host "SQL file found. Executing..."
+     # Create PostgreSQL database and user if not exists
+     $psqlCommand = "psql postgresql://${psqlUser}:${psqlPassword}@localhost -c `"CREATE DATABASE $psqlDb;`""
+     Invoke-Expression $psqlCommand
+
+     $psqlCommand = "psql postgresql://${psqlUser}:${psqlPassword}@localhost/$psqlDb -f $sqlFile"
+     Invoke-Expression $psqlCommand
+} else {
+     Write-Host "SQL file not found at path: $sqlFile"
+}
+
+
+
+# Navigate to the repository directory
+Set-Location $repoDir
+
+# Install Node modules
+pnpm install
+
+# Build and run the application
+pnpm build
+pnpm start
