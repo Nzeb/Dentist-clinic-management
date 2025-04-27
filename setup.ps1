@@ -10,6 +10,13 @@ $sqlFile = "$repoDir\src\server\db\migrations\001_init.sql"
 $envDevFile = "$repoDir\.env-dev"
 $envFile = "$repoDir\.env"
 
+# Install Git if not installed
+if (-Not (Get-Command git -ErrorAction SilentlyContinue)) {
+    Invoke-WebRequest "https://github.com/git-for-windows/git/releases/download/v2.31.1.windows.1/Git-2.31.1-64-bit.exe" -OutFile "git-installer.exe"
+    Start-Process "git-installer.exe" -ArgumentList "/VERYSILENT" -Wait
+    Remove-Item "git-installer.exe"
+}
+
 # Clone the repository if it doesn't exist
 if (-Not (Test-Path $repoDir)) {
     git clone $repoUrl
@@ -53,7 +60,6 @@ if (Test-Path $envDevFile) {
 }
 
 
-
 # Debugging: Check if the SQL file exists
 Write-Host "Checking if SQL file exists at path: $sqlFile"
 if (Test-Path $sqlFile) {
@@ -67,7 +73,6 @@ if (Test-Path $sqlFile) {
 } else {
      Write-Host "SQL file not found at path: $sqlFile"
 }
-
 
 
 # Navigate to the repository directory
