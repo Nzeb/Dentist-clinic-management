@@ -144,24 +144,24 @@ CREATE TRIGGER update_notifications_updated_at
 
 
 -- Create a new user (you should change the password in a secure way)
-CREATE USER cms_user WITH PASSWORD 'your_secure_password';
+CREATE USER dentist_user WITH PASSWORD 'Te123456';
 
 -- Grant usage on the schema
-GRANT USAGE ON SCHEMA public TO cms_user;
+GRANT USAGE ON SCHEMA public TO dentist_user;
 
 -- Grant permissions on all existing tables
-GRANT SELECT, INSERT, UPDATE ON doctors TO cms_user;
-GRANT SELECT, INSERT, UPDATE ON patients TO cms_user;
-GRANT SELECT, INSERT, UPDATE ON appointments TO cms_user;
-GRANT SELECT, INSERT, UPDATE ON treatments TO cms_user;
-GRANT SELECT, INSERT, UPDATE ON invoices TO cms_user;
-GRANT SELECT, INSERT, UPDATE ON history_entries TO cms_user;
-GRANT SELECT, INSERT, UPDATE ON prescriptions TO cms_user;
-GRANT SELECT, INSERT, UPDATE ON notifications TO cms_user;
+GRANT SELECT, INSERT, UPDATE ON doctors TO dentist_user;
+GRANT SELECT, INSERT, UPDATE ON patients TO dentist_user;
+GRANT SELECT, INSERT, UPDATE ON appointments TO dentist_user;
+GRANT SELECT, INSERT, UPDATE ON treatments TO dentist_user;
+GRANT SELECT, INSERT, UPDATE ON invoices TO dentist_user;
+GRANT SELECT, INSERT, UPDATE ON history_entries TO dentist_user;
+GRANT SELECT, INSERT, UPDATE ON prescriptions TO dentist_user;
+GRANT SELECT, INSERT, UPDATE ON notifications TO dentist_user;
 
 -- Grant permissions on sequences (needed for ID columns)
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO cms_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO dentist_user;
 
 -- Grant permissions on future tables (optional)
 ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-GRANT SELECT, INSERT, UPDATE ON TABLES TO cms_user;
+GRANT SELECT, INSERT, UPDATE ON TABLES TO dentist_user;
