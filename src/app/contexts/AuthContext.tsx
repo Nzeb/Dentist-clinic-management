@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation'
 type Role = 'admin' | 'doctor' | null
 
 interface User {
+  firstLogin: any
   id: number
   username: string
   role: Role
@@ -46,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (user) {
       const { password, ...userWithoutPassword } = user
-      setUser(userWithoutPassword)
+      //setUser(userWithoutPassword)
       localStorage.setItem('user', JSON.stringify(userWithoutPassword))
       router.push('/dashboard')
     } else {

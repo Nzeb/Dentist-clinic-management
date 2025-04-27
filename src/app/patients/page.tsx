@@ -329,7 +329,7 @@ export default function PatientsPage() {
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Last Visit</TableHead>
-            {user?.role === 'admin' && <TableHead>Assigned Doctor</TableHead>}
+            {/* {user?.role === 'admin' && <TableHead>Assigned Doctor</TableHead>} */}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -339,7 +339,7 @@ export default function PatientsPage() {
               <TableCell>{patient.email}</TableCell>
               <TableCell>{patient.phone}</TableCell>
               <TableCell>{patient.last_visit}</TableCell>
-              {user?.role === 'admin' && (
+              {/* {user?.role === 'admin' && (
                 <TableCell>
                   <Select
                     value={patient.assigned_doctor_id?.toString() || ''}
@@ -357,7 +357,7 @@ export default function PatientsPage() {
                     </SelectContent>
                   </Select>
                 </TableCell>
-              )}
+              )} */}
             </TableRow>
           ))}
         </TableBody>
@@ -426,8 +426,18 @@ export default function PatientsPage() {
                                       <div className="flex items-center mt-2">
                                         <Paperclip className="h-4 w-4 mr-2" />
                                         <span>{entry.attachments.length} attachment(s)</span>
+                                      </div>     )}                           
+                                      <div className="mt-2">
+                                        {entry.attachments.map((attachment, index) => (
+                                         <div key={index} className="flex items-center mt-1">
+                                           <a href={attachment} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">
+                                             { `Attachment ${index + 1}`}
+                                           </a>
+                                       </div>
+                                       ))}
                                       </div>
-                                    )}
+
+                                   
                                   </li>
                                 ))) : (
                                   <p>No prescriptions available</p>

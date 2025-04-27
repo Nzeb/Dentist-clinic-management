@@ -97,16 +97,16 @@ export default function DoctorsPage() {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold">Doctors</h1>
+                <h1 className="text-3xl font-bold">Employees</h1>
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                     <DialogTrigger asChild>
                         <Button>
-                            <UserPlus className="mr-2 h-4 w-4" /> Add Doctor
+                            <UserPlus className="mr-2 h-4 w-4" /> Add Employee
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Add New Doctor</DialogTitle>
+                            <DialogTitle>Add New Employee</DialogTitle>
                         </DialogHeader>
                         <form onSubmit={handleAddDoctor}>
                             <div className="grid gap-4 py-4">
@@ -114,11 +114,11 @@ export default function DoctorsPage() {
                                     <Label htmlFor="name" className="text-right">
                                         Name
                                     </Label>
-                                    <Input id="name" name="name" placeholder="Doctor's Name" required className="col-span-3" />
+                                    <Input id="name" name="name" placeholder="Employees's Name" required className="col-span-3" />
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button type="submit">Add Doctor</Button>
+                                <Button type="submit">Add Employee</Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>
