@@ -329,7 +329,7 @@ export default function PatientsPage() {
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Last Visit</TableHead>
-            {/* {user?.role === 'admin' && <TableHead>Assigned Doctor</TableHead>} */}
+            {(user?.role === 'admin' || user?.role === 'reception') && <TableHead>Assigned Doctor</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -339,7 +339,7 @@ export default function PatientsPage() {
               <TableCell>{patient.email}</TableCell>
               <TableCell>{patient.phone}</TableCell>
               <TableCell>{patient.last_visit}</TableCell>
-              {/* {user?.role === 'admin' && (
+              {(user?.role === 'admin' || user?.role === 'reception') && (
                 <TableCell>
                   <Select
                     value={patient.assigned_doctor_id?.toString() || ''}
@@ -357,7 +357,7 @@ export default function PatientsPage() {
                     </SelectContent>
                   </Select>
                 </TableCell>
-              )} */}
+              )}
             </TableRow>
           ))}
         </TableBody>
@@ -406,15 +406,17 @@ export default function PatientsPage() {
                             initialNotes={selectedPatient.special_notes || ''}
                             onSave={handleUpdateSpecialNotes}
                           />
-                          <Collapsible className="border rounded-lg shadow-sm">
-                            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-                              <h3 className="text-lg font-semibold">Add New History Entry</h3>
-                              <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
-                            </CollapsibleTrigger>
-                            <CollapsibleContent className="p-4 bg-white">
-                              <AddHistoryEntry patientId={selectedPatient.id} onAdd={handleAddHistoryEntry} />
-                            </CollapsibleContent>
-                          </Collapsible>
+                          {(user?.role === 'admin' || user?.role === 'doctor' || user?.role === 'reception') && (
+                            <Collapsible className="border rounded-lg shadow-sm">
+                              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                                <h3 className="text-lg font-semibold">Add New History Entry</h3>
+                                <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="p-4 bg-white">
+                                <AddHistoryEntry patientId={selectedPatient.id} onAdd={handleAddHistoryEntry} />
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
                           <ul className="space-y-4 mt-4">
                             {patientData?.history && patientData.history.length > 0 ? (
                               patientData.history.filter(entry => entry.patient_id === selectedPatient.id)
@@ -452,15 +454,17 @@ export default function PatientsPage() {
                           <CardTitle>Prescriptions</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 overflow-auto">
-                          <Collapsible className="border rounded-lg shadow-sm">
-                            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-                              <h3 className="text-lg font-semibold">Add New Prescription</h3>
-                              <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
-                            </CollapsibleTrigger>
-                            <CollapsibleContent className="p-4 bg-white">
-                              <AddPrescription patientId={selectedPatient.id} onAdd={handleAddPrescription} />
-                            </CollapsibleContent>
-                          </Collapsible>
+                          {(user?.role === 'admin' || user?.role === 'doctor') && (
+                            <Collapsible className="border rounded-lg shadow-sm">
+                              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                                <h3 className="text-lg font-semibold">Add New Prescription</h3>
+                                <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="p-4 bg-white">
+                                <AddPrescription patientId={selectedPatient.id} onAdd={handleAddPrescription} />
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
                           <ul className="space-y-4 mt-4">
                             {patientData?.prescriptions && patientData.prescriptions.length > 0 ? (
                               patientData.prescriptions

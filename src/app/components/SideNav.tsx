@@ -10,7 +10,7 @@ import { LayoutDashboard, Users, Calendar, Stethoscope, Receipt, LogOut } from '
 
 const adminNavItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  // { name: 'Employees', href: '/employees', icon: Users },
+  { name: 'User Management', href: '/users', icon: Users },
   { name: 'Patients', href: '/patients', icon: Users },
   { name: 'Appointments', href: '/appointments', icon: Calendar },
   { name: 'Treatments', href: '/treatments', icon: Stethoscope },
@@ -23,14 +23,20 @@ const doctorNavItems = [
   { name: 'My Patients', href: '/my-patients', icon: Users },
   { name: 'Appointments', href: '/appointments', icon: Calendar },
   { name: 'Profile', href: '/profile', icon: Receipt },
+]
 
+const receptionNavItems = [
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Patients', href: '/patients', icon: Users },
+    { name: 'Appointments', href: '/appointments', icon: Calendar },
+    { name: 'Profile', href: '/profile', icon: Receipt },
 ]
 
 export function SideNav() {
   const { user, logout } = useAuth()
   const pathname = usePathname()
 
-  const navItems = user?.role === 'admin' ? adminNavItems : doctorNavItems
+  const navItems = user?.role === 'admin' ? adminNavItems : user?.role === 'doctor' ? doctorNavItems : receptionNavItems
 
   return (
     <div className="flex h-full flex-col border-r bg-background">

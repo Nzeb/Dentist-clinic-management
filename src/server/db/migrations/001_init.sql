@@ -1,11 +1,4 @@
 -- src/server/db/migrations/001_init.sql
-CREATE TABLE doctors (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE patients (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -15,7 +8,7 @@ CREATE TABLE patients (
   phone VARCHAR(20) NOT NULL,
   email VARCHAR(255),
   last_visit DATE NOT NULL,
-  assigned_doctor_id INTEGER REFERENCES doctors(id) ON DELETE SET NULL,
+  assigned_doctor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   special_notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -106,12 +99,6 @@ CREATE TRIGGER update_patients_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Add triggers for all tables
-CREATE TRIGGER update_doctors_updated_at
-    BEFORE UPDATE ON doctors
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_appointments_updated_at
     BEFORE UPDATE ON appointments
     FOR EACH ROW
@@ -144,24 +131,9 @@ CREATE TRIGGER update_notifications_updated_at
 
 
 -- Create a new user (you should change the password in a secure way)
-CREATE USER dentist_user WITH PASSWORD 'Te123456';
-
--- Grant usage on the schema
-GRANT USAGE ON SCHEMA public TO dentist_user;
-
--- Grant permissions on all existing tables
-GRANT SELECT, INSERT, UPDATE ON doctors TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON patients TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON appointments TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON treatments TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON invoices TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON history_entries TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON prescriptions TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON notifications TO dentist_user;
-
 -- Grant permissions on sequences (needed for ID columns)
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO dentist_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO neondb_owner;
 
 -- Grant permissions on future tables (optional)
-ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-GRANT SELECT, INSERT, UPDATE ON TABLES TO dentist_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT SELECT, INSERT, UPDATE ON TABLES TO neondb_owner;

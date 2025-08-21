@@ -600,46 +600,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Doctor-related functions
   const getPatientsForDoctor = async (doctorId: number) => {
-    try {
-      const response = await fetch(`/api/doctors/${doctorId}/patients`);
-      if (!response.ok) throw new Error('Failed to fetch doctor\'s patients');
-
-      const doctorPatients = await response.json();
-      return doctorPatients;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch doctor\'s patients');
-      throw err;
+    const response = await fetch(`/api/doctors/${doctorId}/patients`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch patients for doctor');
     }
+    return response.json();
   };
 
   const assignPatientToDoctor = async (patient: DBPatient, doctorId: number) => {
-
     if (!patient) throw new Error('Patient not found');
-    try {
-      // Update the patient's assigned doctor
-      const updatedPatient = {
-        ...patient,
-        assigned_doctor_id: doctorId
-      };
 
-      // Make PATCH request to update the patient
-      const response = await fetch(`/api/patients/${patient.id}`, {
+    const updatedPatient = {
+      ...patient,
+      assigned_doctor_id: doctorId
+    };
+
+    const response = await fetch(`/api/patients/${patient.id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updatedPatient)
-      });
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigned_doctor_id: doctorId }),
+    });
 
-      if (!response.ok) throw new Error('Failed to assign patient to doctor');
-
-      const responsePatient = await response.json();
-      setPatients(prev => prev.map(p => p.id === patient.id ? updatedPatient : p));
-      return responsePatient;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to assign patient to doctor');
-      throw err;
+    if (!response.ok) {
+        throw new Error('Failed to assign doctor');
     }
+
+    const returnedPatient = await response.json();
+    setPatients(prev => prev.map(p => p.id === patient.id ? returnedPatient : p));
+    return returnedPatient;
   };
 
   return (

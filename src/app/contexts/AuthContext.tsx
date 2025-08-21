@@ -46,29 +46,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, router]);
 
   const login = async (username: string, password: string) => {
-    // This is a mock login. In a real application, you would validate credentials against a backend.
-    const mockUsers = [
-      { id: 1, username: 'admin', password: 'admin', role: 'admin' as Role },
-      { id: 2, username: 'doctor1', password: 'doctor1', role: 'doctor' as Role },
-      { id: 3, username: 'doctor2', password: 'doctor2', role: 'doctor' as Role },
-    ]
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
 
-    const user = mockUsers.find(u => u.username === username && u.password === password)
+      if (!response.ok) {
+        throw new Error('Invalid credentials');
+      }
 
-    if (user) {
-      const { password, ...userWithoutPassword } = user
-      setUser(userWithoutPassword)
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword))
-      router.push('/dashboard')
-    } else {
-      throw new Error('Invalid credentials')
+      const user = await response.json();
+      setUser(user);
+      localStorage.setItem('user', JSON.stringify(user));
+      router.push('/dashboard');
+    } catch (error) {
+      throw new Error('Invalid credentials');
     }
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem('user')
-    router.push('/login')
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('user');
+      router.push('/login');
+    }
   }
 
   return (

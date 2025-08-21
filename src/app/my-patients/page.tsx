@@ -29,8 +29,6 @@ export default function MyPatientsPage() {
       if (user?.role === 'doctor') {
         const patients = await getPatientsForDoctor(user.id)
         setMyPatients(patients)
-      } else {
-        setMyPatients(patients)
       }
     }
     loadPatients()
@@ -38,12 +36,9 @@ export default function MyPatientsPage() {
 
   const filteredPatients = myPatients.filter(patient => 
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    // patient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (patient.email && patient.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     patient.phone.includes(searchTerm)
   )
-
-  console.log(user?.id);
-  console.log(myPatients);
 
   const patientNotifications = notifications.filter(n => n.patient_id === selectedPatient?.id)
 
