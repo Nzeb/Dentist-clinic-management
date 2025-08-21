@@ -219,21 +219,20 @@ export default function PatientsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Patients</h1>
-        {user?.role === 'admin' && (
-          <Dialog open={addPatientDialogOpen} onOpenChange={setAddPatientDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" /> Add Patient
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+        <Dialog open={addPatientDialogOpen} onOpenChange={setAddPatientDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <UserPlus className="mr-2 h-4 w-4" /> Add Patient
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Add New Patient</DialogTitle>
               </DialogHeader>
               <form onSubmit={async (e) => {
                 e.preventDefault()
                 const formData = new FormData(e.currentTarget)
-                await addPatient({
+                const patientData = {
                   name: formData.get('name') as string,
                   age: formData.get('age') ? parseInt(formData.get('age') as string) : undefined,
                   sex: formData.get('sex') as string || undefined,
@@ -241,9 +240,10 @@ export default function PatientsPage() {
                   phone: formData.get('phone') as string,
                   email: formData.get('email') as string || undefined,
                   last_visit: new Date().toISOString().split('T')[0],
-                  assigned_doctor_id: null,
+                  assigned_doctor_id: user?.role === 'Doctor' ? user.id : null,
                   special_notes: ''
-                })
+                }
+                await addPatient(patientData)
                 setAddPatientDialogOpen(false)
               }}>
                 <div className="grid gap-4 py-4">
@@ -299,7 +299,6 @@ export default function PatientsPage() {
               </form>
             </DialogContent>
           </Dialog>
-        )}
       </div>
       <div className="flex items-center space-x-2">
         <Input 
