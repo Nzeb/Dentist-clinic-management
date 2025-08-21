@@ -5,13 +5,12 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from './contexts/AuthContext'
 
 export default function HomePage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    // Wait for the user status to be determined
-    if (user === undefined) {
-      return; // Still loading
+    if (loading) {
+      return // Wait for the auth state to be determined
     }
 
     if (user) {
@@ -19,7 +18,7 @@ export default function HomePage() {
     } else {
       router.push('/login')
     }
-  }, [user, router])
+  }, [user, loading, router])
 
   return null // Or a loading spinner
 }
