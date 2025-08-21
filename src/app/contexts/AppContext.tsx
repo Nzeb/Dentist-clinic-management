@@ -175,21 +175,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Patient functions
   const addPatient = async (patient: Omit<DBPatient, 'id'>) => {
-    console.log("add patient function called");
     try {
-      console.log("add patient function called inside");
-      console.log(patient);
-
       const response = await fetch('/api/patients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patient),
       });
 
-      if (!response.ok) throw new Error('Failed to create patient Response not ok');
+      if (!response.ok) throw new Error('Failed to create patient');
 
       const newPatient = await response.json();
-      setPatients(prev => Array.isArray(prev) ? [...prev, newPatient] : [newPatient]);      return newPatient;
+      setPatients(prev => Array.isArray(prev) ? [...prev, newPatient] : [newPatient]);
+      return newPatient;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create patient');
       throw err;

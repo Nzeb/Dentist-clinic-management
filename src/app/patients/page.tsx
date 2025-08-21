@@ -350,7 +350,7 @@ export default function PatientsPage() {
                     <SelectContent>
                       {doctors.map((doctor) => (
                         <SelectItem key={doctor.id} value={doctor.id.toString()}>
-                          {doctor.name}
+                          {doctor.fullName}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -390,7 +390,7 @@ export default function PatientsPage() {
                           <p><strong>Phone:</strong> {selectedPatient.phone}</p>
                           <p><strong>Email:</strong> {selectedPatient.email || 'Not provided'}</p>
                           <p><strong>Last Visit:</strong> {selectedPatient.last_visit}</p>
-                          <p><strong>Assigned Doctor:</strong> {doctors.find(d => d.id === selectedPatient.assigned_doctor_id)?.name || 'Not assigned'}</p>
+                          <p><strong>Assigned Doctor:</strong> {doctors.find(d => d.id === selectedPatient.assigned_doctor_id)?.fullName || 'Not assigned'}</p>
                         </CardContent>
                       </Card>
                     </TabsContent>
