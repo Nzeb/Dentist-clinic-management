@@ -34,8 +34,10 @@ export default function MyPatientsPage() {
         setMyPatients(patients)
       }
     }
-    loadPatients()
-  }, [user, getPatientsForDoctor, patients])
+    if (user) {
+        loadPatients()
+    }
+  }, [user, getPatientsForDoctor])
 
   const filteredPatients = myPatients.filter(patient => 
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
