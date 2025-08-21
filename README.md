@@ -24,8 +24,8 @@ To get a local copy up and running, follow these simple steps.
    ```
 3. Set up your environment variables. Create a `.env` file in the root of the project and add the following:
    ```
-   POSTGRES_URL=postgresql://dentist_user:Te123456@localhost:5432/dentist_clinic
-   JWT_SECRET=your_jwt_secret
+   POSTGRES_URL=your_database_url
+   JWT_SECRET=your_super_secret_key
    ```
 4. Run the database migrations:
     ```sh
