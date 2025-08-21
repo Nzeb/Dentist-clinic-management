@@ -13,7 +13,8 @@ interface User {
 }
 
 interface AuthContextType {
-  user: User | null
+  user: User | null | undefined
+  loading: boolean
   login: (username: string, password: string) => Promise<void>
   logout: () => void
 }
@@ -21,19 +22,28 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<User | null | undefined>(undefined)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
 
   useEffect(() => {
-    // Check for existing session
-    const storedUser = localStorage.getItem('user')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    } else if (pathname !== '/login') {
-      router.push('/login')
-    }
-  }, [pathname, router])
+    const checkUser = () => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+        setLoading(false);
+      } else {
+        setUser(null);
+        if (pathname !== '/login') {
+          router.push('/login');
+        } else {
+          setLoading(false);
+        }
+      }
+    };
+    checkUser();
+  }, [pathname, router]);
 
   const login = async (username: string, password: string) => {
     // This is a mock login. In a real application, you would validate credentials against a backend.
@@ -47,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (user) {
       const { password, ...userWithoutPassword } = user
-      //setUser(userWithoutPassword)
+      setUser(userWithoutPassword)
       localStorage.setItem('user', JSON.stringify(userWithoutPassword))
       router.push('/dashboard')
     } else {
@@ -62,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
