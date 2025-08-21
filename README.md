@@ -24,7 +24,7 @@ To get a local copy up and running, follow these simple steps.
    ```
 3. Set up your environment variables. Create a `.env` file in the root of the project and add the following:
    ```
-   POSTGRES_URL=postgresql://dentist_user:Te123456@localhost:5432/dentist_clinic
+   POSTGRES_URL=postgresql://neondb_owner:m3Y4HJVhqpAr@ep-snowy-art-a2lx1qr3-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
    JWT_SECRET=your_jwt_secret
    ```
 4. Run the database migrations:
