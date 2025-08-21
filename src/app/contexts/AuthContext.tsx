@@ -29,19 +29,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkUser = () => {
-      const storedUser = localStorage.getItem('user')
+      const storedUser = localStorage.getItem('user');
       if (storedUser) {
-        setUser(JSON.parse(storedUser))
+        setUser(JSON.parse(storedUser));
+        setLoading(false);
       } else {
-        setUser(null)
+        setUser(null);
         if (pathname !== '/login') {
-          router.push('/login')
+          router.push('/login');
+        } else {
+          setLoading(false);
         }
       }
-      setLoading(false)
-    }
-    checkUser()
-  }, [pathname, router])
+    };
+    checkUser();
+  }, [pathname, router]);
 
   const login = async (username: string, password: string) => {
     // This is a mock login. In a real application, you would validate credentials against a backend.
@@ -67,10 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
     localStorage.removeItem('user')
     router.push('/login')
-  }
-
-  if (loading) {
-    return null // Or a loading spinner
   }
 
   return (
