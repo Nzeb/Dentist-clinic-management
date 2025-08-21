@@ -1,7 +1,7 @@
 // src/server/services/userService.ts
 import { pool } from '../db/config';
 import { DBUser } from '@/types/db';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 export class UserService {
     async getAllUsers(): Promise<DBUser[]> {
