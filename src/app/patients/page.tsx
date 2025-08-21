@@ -148,7 +148,7 @@ export default function PatientsPage() {
     const prescriptionContent = `
       <h1>Prescription</h1>
       <p><strong>Patient:</strong> ${patient?.name}</p>
-      <p><strong>Doctor:</strong> ${doctor?.name}</p>
+      <p><strong>Doctor:</strong> ${doctor?.fullName}</p>
       <p><strong>Date:</strong> ${prescription.date}</p>
       <p><strong>Medication:</strong> ${prescription.medication}</p>
       <p><strong>Dosage:</strong> ${prescription.dosage}</p>
@@ -240,7 +240,7 @@ export default function PatientsPage() {
                   phone: formData.get('phone') as string,
                   email: formData.get('email') as string || undefined,
                   last_visit: new Date().toISOString().split('T')[0],
-                  assigned_doctor_id: user?.role === 'Doctor' ? user.id : null,
+                  assigned_doctor_id: user?.role.toLowerCase() === 'doctor' ? user.id : null,
                   special_notes: ''
                 }
                 await addPatient(patientData)
@@ -328,7 +328,7 @@ export default function PatientsPage() {
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Last Visit</TableHead>
-            {(user?.role === 'admin' || user?.role === 'reception') && <TableHead>Assigned Doctor</TableHead>}
+            {(user?.role.toLowerCase() === 'admin' || user?.role.toLowerCase() === 'reception') && <TableHead>Assigned Doctor</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -338,7 +338,7 @@ export default function PatientsPage() {
               <TableCell>{patient.email}</TableCell>
               <TableCell>{patient.phone}</TableCell>
               <TableCell>{patient.last_visit}</TableCell>
-              {(user?.role === 'admin' || user?.role === 'reception') && (
+              {(user?.role.toLowerCase() === 'admin' || user?.role.toLowerCase() === 'reception') && (
                 <TableCell>
                   <Select
                     value={patient.assigned_doctor_id?.toString() || ''}
@@ -405,7 +405,7 @@ export default function PatientsPage() {
                             initialNotes={selectedPatient.special_notes || ''}
                             onSave={handleUpdateSpecialNotes}
                           />
-                          {(user?.role === 'admin' || user?.role === 'doctor' || user?.role === 'reception') && (
+                          {(user?.role.toLowerCase() === 'admin' || user?.role.toLowerCase() === 'doctor' || user?.role.toLowerCase() === 'reception') && (
                             <Collapsible className="border rounded-lg shadow-sm">
                               <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
                                 <h3 className="text-lg font-semibold">Add New History Entry</h3>
@@ -453,7 +453,7 @@ export default function PatientsPage() {
                           <CardTitle>Prescriptions</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 overflow-auto">
-                          {(user?.role === 'admin' || user?.role === 'doctor') && (
+                          {(user?.role.toLowerCase() === 'admin' || user?.role.toLowerCase() === 'doctor') && (
                             <Collapsible className="border rounded-lg shadow-sm">
                               <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
                                 <h3 className="text-lg font-semibold">Add New Prescription</h3>

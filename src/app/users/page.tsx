@@ -37,7 +37,7 @@ export default function UsersPage() {
     fetchUsers()
   }, [])
 
-  if (user?.role !== 'admin') {
+  if (user?.role.toLowerCase() !== 'admin') {
     return <div>You do not have permission to view this page.</div>
   }
 
@@ -214,7 +214,7 @@ export default function UsersPage() {
                   }}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  {user.role !== 'Admin' && (
+                  {user.role.toLowerCase() !== 'admin' && (
                     <Button variant="outline" size="icon" onClick={() => handleDeleteUser(user.id)}>
                       <Trash className="h-4 w-4" />
                     </Button>

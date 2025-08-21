@@ -36,7 +36,7 @@ export function SideNav() {
   const { user, logout } = useAuth()
   const pathname = usePathname()
 
-  const navItems = user?.role === 'admin' ? adminNavItems : user?.role === 'doctor' ? doctorNavItems : receptionNavItems
+  const navItems = user?.role.toLowerCase() === 'admin' ? adminNavItems : user?.role.toLowerCase() === 'doctor' ? doctorNavItems : receptionNavItems
 
   return (
     <div className="flex h-full flex-col border-r bg-background">

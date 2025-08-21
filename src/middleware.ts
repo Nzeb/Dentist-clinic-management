@@ -19,19 +19,19 @@ export async function middleware(req: NextRequest) {
 
   try {
     const { payload } = await jwtVerify(token, secret)
-    const userRole = payload.role as string
+    const userRole = (payload.role as string).toLowerCase()
 
     const { pathname } = req.nextUrl
 
-    if (pathname.startsWith('/users') && userRole !== 'Admin') {
+    if (pathname.startsWith('/users') && userRole !== 'admin') {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 
-    if (pathname.startsWith('/api/users') && userRole !== 'Admin') {
+    if (pathname.startsWith('/api/users') && userRole !== 'admin') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    if (pathname.startsWith('/my-patients') && userRole !== 'Doctor') {
+    if (pathname.startsWith('/my-patients') && userRole !== 'doctor') {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 
