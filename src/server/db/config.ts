@@ -11,19 +11,3 @@ export const pool = new Pool({
     rejectUnauthorized: false,
   },
 });
-
-// Test the connection
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('Error acquiring client', err.stack);
-    return;
-  }
-  client?.query('SELECT NOW()', (err, result) => {
-    release();
-    if (err) {
-      console.error('Error executing query', err.stack);
-      return;
-    }
-    console.log('Connected to database');
-  });
-});
