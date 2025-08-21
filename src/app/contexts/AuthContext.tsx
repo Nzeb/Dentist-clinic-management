@@ -28,57 +28,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   useEffect(() => {
-    const checkUser = () => {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-        setLoading(false);
-      } else {
-        setUser(null);
-        if (pathname !== '/login') {
-          router.push('/login');
+    const checkUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const user = await response.json();
+          setUser(user);
         } else {
-          setLoading(false);
+          setUser(null);
         }
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
     checkUser();
   }, [pathname, router]);
 
   const login = async (username: string, password: string) => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
 
-      if (!response.ok) {
-        throw new Error('Invalid credentials');
-      }
-
-      const user = await response.json();
-      setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
-      router.push('/dashboard');
-    } catch (error) {
-      throw new Error('Invalid credentials');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Login failed' }));
+      throw new Error(errorData.error || 'Invalid credentials');
     }
-  }
+
+    const userData = await response.json();
+    setUser(userData);
+    router.push('/dashboard');
+  };
 
   const logout = async () => {
+    setUser(null);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
-      setUser(null);
-      localStorage.removeItem('user');
       router.push('/login');
     }
-  }
+  };
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>
