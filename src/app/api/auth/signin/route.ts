@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret');
 
 export async function POST(req: NextRequest) {
     try {
