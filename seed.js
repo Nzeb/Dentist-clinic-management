@@ -1,7 +1,7 @@
 require('dotenv').config();
 require('ts-node').register();
 const { pool } = require('./src/server/db/config.ts');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 async function seed() {
     try {
