@@ -24,23 +24,21 @@ export async function GET(
 
   try {
     const patientService = new PatientService();
-    const patientId = parseInt(params.id);
+    const doctorId = parseInt(params.id);
     
-    console.log("Fetching patient for patient ID:", patientId);
+    const patients = await patientService.getPatientsForDoctor(doctorId);
     
-    const patient = await patientService.getPatientsForDoctor(patientId);
-    
-    if (!patient) {
+    if (!patients) {
       return NextResponse.json(
         { error: 'No patient found for this doctor' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(patient);
+    return NextResponse.json(patients);
     
   } catch (error) {
-    console.error('Error in GET /api/doctor/[id]/patients:', error);
+    console.error('Error in GET /api/doctors/[id]/patients:', error);
     
     if (error instanceof Error) {
       return NextResponse.json(

@@ -148,7 +148,7 @@ export default function PatientsPage() {
     const prescriptionContent = `
       <h1>Prescription</h1>
       <p><strong>Patient:</strong> ${patient?.name}</p>
-      <p><strong>Doctor:</strong> ${doctor?.name}</p>
+      <p><strong>Doctor:</strong> ${doctor?.fullName}</p>
       <p><strong>Date:</strong> ${prescription.date}</p>
       <p><strong>Medication:</strong> ${prescription.medication}</p>
       <p><strong>Dosage:</strong> ${prescription.dosage}</p>
@@ -219,21 +219,20 @@ export default function PatientsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Patients</h1>
-        {user?.role === 'admin' && (
-          <Dialog open={addPatientDialogOpen} onOpenChange={setAddPatientDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" /> Add Patient
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+        <Dialog open={addPatientDialogOpen} onOpenChange={setAddPatientDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <UserPlus className="mr-2 h-4 w-4" /> Add Patient
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Add New Patient</DialogTitle>
               </DialogHeader>
               <form onSubmit={async (e) => {
                 e.preventDefault()
                 const formData = new FormData(e.currentTarget)
-                await addPatient({
+                const patientData = {
                   name: formData.get('name') as string,
                   age: formData.get('age') ? parseInt(formData.get('age') as string) : undefined,
                   sex: formData.get('sex') as string || undefined,
@@ -241,9 +240,10 @@ export default function PatientsPage() {
                   phone: formData.get('phone') as string,
                   email: formData.get('email') as string || undefined,
                   last_visit: new Date().toISOString().split('T')[0],
-                  assigned_doctor_id: null,
+                  assigned_doctor_id: user?.role.toLowerCase() === 'doctor' ? user.id : null,
                   special_notes: ''
-                })
+                }
+                await addPatient(patientData)
                 setAddPatientDialogOpen(false)
               }}>
                 <div className="grid gap-4 py-4">
@@ -299,7 +299,6 @@ export default function PatientsPage() {
               </form>
             </DialogContent>
           </Dialog>
-        )}
       </div>
       <div className="flex items-center space-x-2">
         <Input 
@@ -329,7 +328,7 @@ export default function PatientsPage() {
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Last Visit</TableHead>
-            {/* {user?.role === 'admin' && <TableHead>Assigned Doctor</TableHead>} */}
+            {(user?.role.toLowerCase() === 'admin' || user?.role.toLowerCase() === 'reception') && <TableHead>Assigned Doctor</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -339,7 +338,7 @@ export default function PatientsPage() {
               <TableCell>{patient.email}</TableCell>
               <TableCell>{patient.phone}</TableCell>
               <TableCell>{patient.last_visit}</TableCell>
-              {/* {user?.role === 'admin' && (
+              {(user?.role.toLowerCase() === 'admin' || user?.role.toLowerCase() === 'reception') && (
                 <TableCell>
                   <Select
                     value={patient.assigned_doctor_id?.toString() || ''}
@@ -351,13 +350,13 @@ export default function PatientsPage() {
                     <SelectContent>
                       {doctors.map((doctor) => (
                         <SelectItem key={doctor.id} value={doctor.id.toString()}>
-                          {doctor.name}
+                          {doctor.fullName}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </TableCell>
-              )} */}
+              )}
             </TableRow>
           ))}
         </TableBody>
@@ -391,7 +390,7 @@ export default function PatientsPage() {
                           <p><strong>Phone:</strong> {selectedPatient.phone}</p>
                           <p><strong>Email:</strong> {selectedPatient.email || 'Not provided'}</p>
                           <p><strong>Last Visit:</strong> {selectedPatient.last_visit}</p>
-                          <p><strong>Assigned Doctor:</strong> {doctors.find(d => d.id === selectedPatient.assigned_doctor_id)?.name || 'Not assigned'}</p>
+                          <p><strong>Assigned Doctor:</strong> {doctors.find(d => d.id === selectedPatient.assigned_doctor_id)?.fullName || 'Not assigned'}</p>
                         </CardContent>
                       </Card>
                     </TabsContent>
@@ -406,15 +405,17 @@ export default function PatientsPage() {
                             initialNotes={selectedPatient.special_notes || ''}
                             onSave={handleUpdateSpecialNotes}
                           />
-                          <Collapsible className="border rounded-lg shadow-sm">
-                            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-                              <h3 className="text-lg font-semibold">Add New History Entry</h3>
-                              <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
-                            </CollapsibleTrigger>
-                            <CollapsibleContent className="p-4 bg-white">
-                              <AddHistoryEntry patientId={selectedPatient.id} onAdd={handleAddHistoryEntry} />
-                            </CollapsibleContent>
-                          </Collapsible>
+                          {(user?.role.toLowerCase() === 'admin' || user?.role.toLowerCase() === 'doctor' || user?.role.toLowerCase() === 'reception') && (
+                            <Collapsible className="border rounded-lg shadow-sm">
+                              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                                <h3 className="text-lg font-semibold">Add New History Entry</h3>
+                                <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="p-4 bg-white">
+                                <AddHistoryEntry patientId={selectedPatient.id} onAdd={handleAddHistoryEntry} />
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
                           <ul className="space-y-4 mt-4">
                             {patientData?.history && patientData.history.length > 0 ? (
                               patientData.history.filter(entry => entry.patient_id === selectedPatient.id)
@@ -452,15 +453,17 @@ export default function PatientsPage() {
                           <CardTitle>Prescriptions</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 overflow-auto">
-                          <Collapsible className="border rounded-lg shadow-sm">
-                            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-                              <h3 className="text-lg font-semibold">Add New Prescription</h3>
-                              <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
-                            </CollapsibleTrigger>
-                            <CollapsibleContent className="p-4 bg-white">
-                              <AddPrescription patientId={selectedPatient.id} onAdd={handleAddPrescription} />
-                            </CollapsibleContent>
-                          </Collapsible>
+                          {(user?.role.toLowerCase() === 'admin' || user?.role.toLowerCase() === 'doctor') && (
+                            <Collapsible className="border rounded-lg shadow-sm">
+                              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                                <h3 className="text-lg font-semibold">Add New Prescription</h3>
+                                <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="p-4 bg-white">
+                                <AddPrescription patientId={selectedPatient.id} onAdd={handleAddPrescription} />
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
                           <ul className="space-y-4 mt-4">
                             {patientData?.prescriptions && patientData.prescriptions.length > 0 ? (
                               patientData.prescriptions

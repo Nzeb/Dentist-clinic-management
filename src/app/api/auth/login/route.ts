@@ -1,52 +1,43 @@
-// src/app/api/auth/login/route.ts
+import { pool } from '@/server/db/config';
 import { NextRequest, NextResponse } from 'next/server';
-import { UserService } from '@/server/services/userService';
+import bcrypt from 'bcrypt';
+import { SignJWT } from 'jose';
+import { cookies } from 'next/headers';
+
+const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
 export async function POST(req: NextRequest) {
-  try {
-    const { username, password } = await req.json();
+    try {
+        const { username, password } = await req.json();
+        const { rows } = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+        if (rows.length === 0) {
+            return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+        }
 
-    if (!username || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
+        const user = rows[0];
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) {
+            return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+        }
+
+        const { password: _, ...userWithoutPassword } = user;
+
+        const token = await new SignJWT(userWithoutPassword)
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime('1h')
+            .sign(secret);
+
+        cookies().set('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/',
+        });
+
+        return NextResponse.json(userWithoutPassword);
+
+    } catch (error) {
+        return NextResponse.json({ error: 'Failed to login' }, { status: 500 });
     }
-    // const userService = new UserService();
-
-    // const user = await userService.login(username, password);
-
-    if(username == "admin" && password == "admin")
-    {
-      return NextResponse.json({ success: true });
-    }
-    
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
-
-    //TODO Add session logic to server
-    // Create session token
-    // const token = await userService.createSession(user);
-
-    // Set HTTP-only cookie with the session token
-    const response = NextResponse.json({ success: true, user });
-    // response.cookies.set('auth-token', token, {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === 'production',
-    //   sameSite: 'strict',
-    //   maxAge: 60 * 60 * 24 * 7 // 1 week
-    // });
-
-    return response;
-
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Authentication failed' },
-      { status: 500 }
-    );
-  }
 }

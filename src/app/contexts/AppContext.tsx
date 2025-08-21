@@ -10,7 +10,7 @@ import {
   DBHistoryEntry,
   DBPrescription,
   DBNotification,
-  DBDoctor
+  DBUser
 } from '@/types/db';
 
 interface AppContextType {
@@ -21,7 +21,7 @@ interface AppContextType {
   history: DBHistoryEntry[];
   prescriptions: DBPrescription[];
   notifications: DBNotification[];
-  doctors: DBDoctor[];
+  doctors: DBUser[];
   isLoading: boolean;
   error: string | null;
 
@@ -30,11 +30,6 @@ interface AppContextType {
   updatePatient: (id: number, patient: Partial<DBPatient>) => Promise<DBPatient>;
   getPatientsForDoctor: (doctorId: number) => Promise<DBPatient[]>;
   assignPatientToDoctor: (patient: DBPatient, doctorId: number) => Promise<DBPatient | null>;
-
-  // Doctor functions
-  addDoctor: (doctor: Omit<DBDoctor, 'id'>) => Promise<DBDoctor>;
-  updateDoctor: (id: number, doctor: Partial<DBDoctor>) => Promise<DBDoctor | null>;
-  deleteDoctor: (id: number) => Promise<boolean>;
 
   // Appointment functions
   addAppointment: (appointment: Omit<DBAppointment, 'id'>) => Promise<DBAppointment>;
@@ -75,7 +70,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [history, setHistory] = useState<DBHistoryEntry[]>([]);
   const [prescriptions, setPrescriptions] = useState<DBPrescription[]>([]);
   const [notifications, setNotifications] = useState<DBNotification[]>([]);
-  const [doctors, setDoctors] = useState<DBDoctor[]>([]);
+  const [doctors, setDoctors] = useState<DBUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -161,7 +156,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         // Handle doctors data
-        if (!isValidArray<DBDoctor>(doctorsData)) {
+        if (!isValidArray<DBUser>(doctorsData)) {
           console.warn('Invalid doctors data received:', doctorsData);
           setDoctors([]);
         } else {
@@ -180,21 +175,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Patient functions
   const addPatient = async (patient: Omit<DBPatient, 'id'>) => {
-    console.log("add patient function called");
     try {
-      console.log("add patient function called inside");
-      console.log(patient);
-
       const response = await fetch('/api/patients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patient),
       });
 
-      if (!response.ok) throw new Error('Failed to create patient Response not ok');
+      if (!response.ok) throw new Error('Failed to create patient');
 
       const newPatient = await response.json();
-      setPatients(prev => Array.isArray(prev) ? [...prev, newPatient] : [newPatient]);      return newPatient;
+      setPatients(prev => Array.isArray(prev) ? [...prev, newPatient] : [newPatient]);
+      return newPatient;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create patient');
       throw err;
@@ -217,81 +209,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update patient');
       throw err;
-    }
-  };
-
-  //Doctor functions
-  const addDoctor = async (doctor: Omit<DBDoctor, 'id'>) => {
-    try {
-      const response = await fetch('/api/doctors', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(doctor),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add doctor');
-      }
-
-      const newDoctor = await response.json();
-      setDoctors([...doctors, newDoctor]);
-      return newDoctor;
-    } catch (error) {
-      console.error('Error adding doctor:', error);
-      // Handle error (e.g., show toast notification)
-    }
-  };
-
-  const updateDoctor = async (id: number, doctor: Partial<DBDoctor>) => {
-    console.log("update doctor function called: ", id);
-    console.log(doctor);
-    try {
-      const response = await fetch(`/api/doctors/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(doctor),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update doctor');
-      }
-
-      const updatedDoctor = await response.json();
-      setDoctors(doctors.map(d => d.id === id ? updatedDoctor : d));
-      return updatedDoctor;
-    } catch (error) {
-      console.error('Error updating doctor:', error);
-      // Handle error (e.g., show toast notification)
-    }
-  };
-
-  const deleteDoctor = async (id: number) => {
-    try {
-      const response = await fetch(`/api/doctors/${id}`, {
-        method: 'DELETE',
-      });
-
-      // const response = await fetch(`/api/doctors/${id}`, {
-      //   method: 'GET',
-      // });
-
-      console.log("delete doctor function called: ", id);
-      console.log(response);
-
-      if (!response.ok) {
-        throw new Error('Failed to delete doctor');
-      }
-
-      setDoctors(doctors.filter(d => d.id !== id));
-      return true;
-    } catch (err) {
-      console.error('Error deleting doctor:', err);
-      throw err;
-      // Handle error (e.g., show toast notification)
     }
   };
 
@@ -600,46 +517,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Doctor-related functions
   const getPatientsForDoctor = async (doctorId: number) => {
-    try {
-      const response = await fetch(`/api/doctors/${doctorId}/patients`);
-      if (!response.ok) throw new Error('Failed to fetch doctor\'s patients');
-
-      const doctorPatients = await response.json();
-      return doctorPatients;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch doctor\'s patients');
-      throw err;
+    const response = await fetch(`/api/doctors/${doctorId}/patients`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch patients for doctor');
     }
+    return response.json();
   };
 
   const assignPatientToDoctor = async (patient: DBPatient, doctorId: number) => {
-
     if (!patient) throw new Error('Patient not found');
-    try {
-      // Update the patient's assigned doctor
-      const updatedPatient = {
-        ...patient,
-        assigned_doctor_id: doctorId
-      };
 
-      // Make PATCH request to update the patient
-      const response = await fetch(`/api/patients/${patient.id}`, {
+    const updatedPatient = {
+      ...patient,
+      assigned_doctor_id: doctorId
+    };
+
+    const response = await fetch(`/api/patients/${patient.id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updatedPatient)
-      });
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigned_doctor_id: doctorId }),
+    });
 
-      if (!response.ok) throw new Error('Failed to assign patient to doctor');
-
-      const responsePatient = await response.json();
-      setPatients(prev => prev.map(p => p.id === patient.id ? updatedPatient : p));
-      return responsePatient;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to assign patient to doctor');
-      throw err;
+    if (!response.ok) {
+        throw new Error('Failed to assign doctor');
     }
+
+    const returnedPatient = await response.json();
+    setPatients(prev => prev.map(p => p.id === patient.id ? returnedPatient : p));
+    return returnedPatient;
   };
 
   return (
@@ -658,9 +563,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updatePatient,
       getPatientsForDoctor,
       assignPatientToDoctor,
-      addDoctor,
-      updateDoctor,
-      deleteDoctor,
       addAppointment,
       updateAppointment,
       deleteAppointment,

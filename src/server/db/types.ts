@@ -61,8 +61,10 @@
 //     date: string;
 //   }
   
-//   export interface DBDoctor {
-//     id: number;
-//     name: string;
-//   }
-  
+export interface DBUser {
+    id: number;
+    username: string;
+    role: 'Admin' | 'Doctor' | 'Reception';
+    fullName: string;
+    email: string;
+}

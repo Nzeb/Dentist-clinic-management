@@ -1,12 +1,11 @@
--- src/server/db/migrations/001_init.sql
-CREATE TABLE doctors (
+CREATE TABLE IF NOT EXISTS doctors (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE patients (
+CREATE TABLE IF NOT EXISTS patients (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   age INTEGER,
@@ -21,7 +20,7 @@ CREATE TABLE patients (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE appointments (
+CREATE TABLE IF NOT EXISTS appointments (
   id SERIAL PRIMARY KEY,
   patient_id INTEGER REFERENCES patients(id) ON DELETE CASCADE,
   date DATE NOT NULL,
@@ -31,7 +30,7 @@ CREATE TABLE appointments (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE treatments (
+CREATE TABLE IF NOT EXISTS treatments (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   duration VARCHAR(50) NOT NULL,
@@ -40,7 +39,7 @@ CREATE TABLE treatments (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE invoices (
+CREATE TABLE IF NOT EXISTS invoices (
   id SERIAL PRIMARY KEY,
   patient_id INTEGER REFERENCES patients(id) ON DELETE CASCADE,
   date DATE NOT NULL,
@@ -50,7 +49,7 @@ CREATE TABLE invoices (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE history_entries (
+CREATE TABLE IF NOT EXISTS history_entries (
   id SERIAL PRIMARY KEY,
   patient_id INTEGER REFERENCES patients(id) ON DELETE CASCADE,
   date DATE NOT NULL,
@@ -60,7 +59,7 @@ CREATE TABLE history_entries (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE prescriptions (
+CREATE TABLE IF NOT EXISTS prescriptions (
   id SERIAL PRIMARY KEY,
   patient_id INTEGER REFERENCES patients(id) ON DELETE CASCADE,
   date DATE NOT NULL,
@@ -72,7 +71,7 @@ CREATE TABLE prescriptions (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
   id SERIAL PRIMARY KEY,
   patient_id INTEGER REFERENCES patients(id) ON DELETE CASCADE,
   type VARCHAR(20) CHECK (type IN ('appointment', 'prescription')),
@@ -83,13 +82,13 @@ CREATE TABLE notifications (
 );
 
 -- Create indexes
-CREATE INDEX idx_patients_assigned_doctor ON patients(assigned_doctor_id);
-CREATE INDEX idx_appointments_patient ON appointments(patient_id);
-CREATE INDEX idx_appointments_date ON appointments(date);
-CREATE INDEX idx_prescriptions_patient ON prescriptions(patient_id);
-CREATE INDEX idx_invoices_patient ON invoices(patient_id);
-CREATE INDEX idx_history_patient ON history_entries(patient_id);
-CREATE INDEX idx_notifications_patient ON notifications(patient_id);
+CREATE INDEX IF NOT EXISTS idx_patients_assigned_doctor ON patients(assigned_doctor_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_patient ON appointments(patient_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
+CREATE INDEX IF NOT EXISTS idx_prescriptions_patient ON prescriptions(patient_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_patient ON invoices(patient_id);
+CREATE INDEX IF NOT EXISTS idx_history_patient ON history_entries(patient_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_patient ON notifications(patient_id);
 
 -- Create trigger for updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -101,67 +100,50 @@ END;
 $$ language 'plpgsql';
 
 -- Add triggers to all tables
+DROP TRIGGER IF EXISTS update_patients_updated_at ON patients;
 CREATE TRIGGER update_patients_updated_at
     BEFORE UPDATE ON patients
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Add triggers for all tables
+DROP TRIGGER IF EXISTS update_doctors_updated_at ON doctors;
 CREATE TRIGGER update_doctors_updated_at
     BEFORE UPDATE ON doctors
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_appointments_updated_at ON appointments;
 CREATE TRIGGER update_appointments_updated_at
     BEFORE UPDATE ON appointments
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_treatments_updated_at ON treatments;
 CREATE TRIGGER update_treatments_updated_at
     BEFORE UPDATE ON treatments
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_invoices_updated_at ON invoices;
 CREATE TRIGGER update_invoices_updated_at
     BEFORE UPDATE ON invoices
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_history_entries_updated_at ON history_entries;
 CREATE TRIGGER update_history_entries_updated_at
     BEFORE UPDATE ON history_entries
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_prescriptions_updated_at ON prescriptions;
 CREATE TRIGGER update_prescriptions_updated_at
     BEFORE UPDATE ON prescriptions
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_notifications_updated_at ON notifications;
 CREATE TRIGGER update_notifications_updated_at
     BEFORE UPDATE ON notifications
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
-
-
--- Create a new user (you should change the password in a secure way)
-CREATE USER dentist_user WITH PASSWORD 'Te123456';
-
--- Grant usage on the schema
-GRANT USAGE ON SCHEMA public TO dentist_user;
-
--- Grant permissions on all existing tables
-GRANT SELECT, INSERT, UPDATE ON doctors TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON patients TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON appointments TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON treatments TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON invoices TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON history_entries TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON prescriptions TO dentist_user;
-GRANT SELECT, INSERT, UPDATE ON notifications TO dentist_user;
-
--- Grant permissions on sequences (needed for ID columns)
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO dentist_user;
-
--- Grant permissions on future tables (optional)
-ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-GRANT SELECT, INSERT, UPDATE ON TABLES TO dentist_user;
