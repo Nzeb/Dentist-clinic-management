@@ -140,7 +140,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         // Handle treatments data
-        console.log('Treatments data from API:', treatmentsData);
         if (!isValidArray<DBTreatment>(treatmentsData)) {
           console.warn('Invalid treatments data received:', treatmentsData);
           setTreatments([]);
