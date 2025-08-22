@@ -62,7 +62,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const user = await response.json();
       setUser(user);
       localStorage.setItem('user', JSON.stringify(user));
-      router.push('/dashboard');
+      if (user.role.toLowerCase() === 'doctor') {
+        router.push('/my-patients');
+      } else {
+        router.push('/patients');
+      }
     } catch (error) {
       throw new Error('Invalid credentials');
     }

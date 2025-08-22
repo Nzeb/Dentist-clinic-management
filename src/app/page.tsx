@@ -14,7 +14,7 @@ export default function HomePage() {
     }
 
     if (user) {
-      router.push('/dashboard')
+      router.push('/patients')
     } else {
       router.push('/login')
     }

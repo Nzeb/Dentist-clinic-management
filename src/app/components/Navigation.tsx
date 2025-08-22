@@ -6,7 +6,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { Button } from "@/components/ui/button"
 
 const adminNavItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Patients', href: '/patients', icon: UserIcon },
   { name: 'Appointments', href: '/appointments', icon: CalendarIcon },
   { name: 'Treatments', href: '/treatments', icon: FileTextIcon },
@@ -14,7 +13,6 @@ const adminNavItems = [
 ]
 
 const doctorNavItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'My Patients', href: '/my-patients', icon: UserIcon },
   { name: 'Appointments', href: '/appointments', icon: CalendarIcon },
 ]
