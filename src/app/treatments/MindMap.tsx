@@ -134,12 +134,15 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
             onChange={(e) => setNewNodeLabel(e.target.value)}
             placeholder="New node label"
           />
-          <input
-            type="color"
-            value={newNodeColor}
-            onChange={(e) => setNewNodeColor(e.target.value)}
-            style={{ marginLeft: 5 }}
-          />
+          <div style={{ marginLeft: 5 }}>
+            {['#ffcce6', '#cce6ff', '#ccffcc', '#ffffcc', '#e6ccff', '#ffebcc'].map(color => (
+              <button
+                key={color}
+                style={{ backgroundColor: color, width: 20, height: 20, border: newNodeColor === color ? '2px solid #000' : '1px solid #ccc', marginRight: 5 }}
+                onClick={() => setNewNodeColor(color)}
+              />
+            ))}
+          </div>
           <button onClick={addNode} style={{ marginLeft: 5 }}>Add Node</button>
         </div>
       )}
