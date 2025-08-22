@@ -35,20 +35,20 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
   const [newNodeColor, setNewNodeColor] = useState('#ffffff');
 
   useEffect(() => {
-    const nodesWithOnChange = nodes.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        onNoteChange: handleNodeNoteChange,
-        onLabelChange: handleNodeLabelChange,
-        onDelete: handleNodeDelete,
-      },
-    }));
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          onNoteChange: handleNodeNoteChange,
+          onLabelChange: handleNodeLabelChange,
+          onDelete: handleNodeDelete,
+        },
+      }))
+    );
+  }, [initialNodes]);
 
-    if (JSON.stringify(nodes) !== JSON.stringify(nodesWithOnChange)) {
-      setNodes(nodesWithOnChange);
-    }
-
+  useEffect(() => {
     if (nodes !== initialNodes || edges !== initialEdges) {
       const savePlan = async () => {
         await fetch('/api/treatments/plan', {
@@ -59,7 +59,7 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
       };
       savePlan();
     }
-  }, [patientId, nodes, edges, setNodes]);
+  }, [patientId, nodes, edges]);
 
   const onConnect = useCallback(
     (params: any) => setEdges((eds) => addEdge(params, eds)),
