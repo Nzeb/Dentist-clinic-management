@@ -26,10 +26,8 @@ const initialNodes: Node[] = [
 ];
 const initialEdges: Edge[] = [];
 
-export default function MindMap({ patientId, initialNodes, initialEdges }: { patientId: number, initialNodes: Node[], initialEdges: Edge[] }) {
+export default function MindMap({ patientId, initialNodes = [], initialEdges = [] }: { patientId: number, initialNodes: Node[], initialEdges: Edge[] }) {
   const { user } = useAuth();
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
   const [newNodeLabel, setNewNodeLabel] = useState('');
   const [newNodeColor, setNewNodeColor] = useState('#e2e8f0');
@@ -71,8 +69,8 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
     );
   }, [setNodes]);
 
-  useEffect(() => {
-    const enrichedNodes = initialNodes.map((node) => ({
+  const enrichedInitialNodes = useMemo(() => {
+    return initialNodes.map((node) => ({
       ...node,
       data: {
         ...node.data,
@@ -82,8 +80,10 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
         onDelete: handleNodeDelete,
       },
     }));
-    setNodes(enrichedNodes);
-  }, [initialNodes, handleNodeNoteChange, handleNodeLabelChange, handleNodeColorChange, handleNodeDelete, setNodes]);
+  }, [initialNodes, handleNodeNoteChange, handleNodeLabelChange, handleNodeColorChange, handleNodeDelete]);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(enrichedInitialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   useEffect(() => {
     if (nodes !== initialNodes || edges !== initialEdges) {
