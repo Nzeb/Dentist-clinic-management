@@ -1,91 +1,83 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppContext } from '../contexts/AppContext'
-import { useAuth } from '../contexts/AuthContext'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { FilePlus, SmileIcon as Tooth } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import MindMap from './MindMap'
+import { DBPatient, DBTreatmentPlan } from '@/types/db'
 
 export default function TreatmentsPage() {
-  const { treatments, addTreatment, patients, getPatientsForDoctor } = useAppContext()
-  const { user } = useAuth()
-  const [selectedTreatment, setSelectedTreatment] = useState<typeof treatments[0] | null>(null)
-  const [addTreatmentDialogOpen, setAddTreatmentDialogOpen] = useState(false)
+  const { patients } = useAppContext()
+  const [selectedPatient, setSelectedPatient] = useState<DBPatient | null>(null)
+  const [treatmentPlan, setTreatmentPlan] = useState<DBTreatmentPlan | null>(null)
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false)
 
-  const myPatients = user?.role === 'doctor' ? getPatientsForDoctor(user.id) : patients
+  useEffect(() => {
+    if (selectedPatient) {
+      const fetchPlan = async () => {
+        setIsLoadingPlan(true)
+        const response = await fetch(`/api/treatments/plan?patientId=${selectedPatient.id}`)
+        if (response.ok) {
+          const plan = await response.json()
+          setTreatmentPlan(plan)
+        }
+        setIsLoadingPlan(false)
+      }
+      fetchPlan()
+    } else {
+      setTreatmentPlan(null)
+    }
+  }, [selectedPatient])
+
+  const handleAddPlan = async () => {
+    if (selectedPatient) {
+      const response = await fetch('/api/treatments/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patientId: selectedPatient.id, nodes: [], edges: [] }),
+      });
+      if (response.ok) {
+        const plan = await response.json();
+        setTreatmentPlan(plan);
+      }
+    }
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Treatments</h1>
-        {user?.role === 'admin' && (
-          <Dialog open={addTreatmentDialogOpen} onOpenChange={setAddTreatmentDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <FilePlus className="mr-2 h-4 w-4" /> Add Treatment
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Treatment</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={async (e) => {
-                e.preventDefault()
-                const formData = new FormData(e.currentTarget)
-                await addTreatment({
-                  name: formData.get('name') as string,
-                  duration: formData.get('duration') as string,
-                  price: formData.get('price') as string,
-                  is_active: false
-                })
-                setAddTreatmentDialogOpen(false)
-              }}>
-                <div className="grid gap-4 py-4">
-                  <Input id="name" name="name" placeholder="Treatment Name" required />
-                  <Input id="duration" name="duration" placeholder="Duration (e.g., 30 mins)" required />
-                  <Input id="price" name="price" placeholder="Price" required />
-                </div>
-                <Button type="submit">Add Treatment</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        )}
+      <h1 className="text-3xl font-bold">Treatment Plans</h1>
+      <div className="flex items-center space-x-4">
+        <label htmlFor="patient-select">Select Patient:</label>
+        <Select onValueChange={(patientId) => setSelectedPatient(patients.find(p => p.id === parseInt(patientId)) || null)}>
+          <SelectTrigger className="w-[280px]">
+            <SelectValue placeholder="Select a patient" />
+          </SelectTrigger>
+          <SelectContent>
+            {patients.map((patient) => (
+              <SelectItem key={patient.id} value={String(patient.id)}>
+                {patient.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {treatments.map((treatment) => (
-          <Card key={treatment.id} onClick={() => setSelectedTreatment(treatment)} className="cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{treatment.name}</CardTitle>
-              <Tooth className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{treatment.price}</div>
-              <p className="text-xs text-muted-foreground">Duration: {treatment.duration}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      {selectedTreatment && (
-        <Dialog open={!!selectedTreatment} onOpenChange={() => setSelectedTreatment(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Treatment Details</DialogTitle>
-            </DialogHeader>
-            <Card>
-              <CardHeader>
-                <CardTitle>{selectedTreatment.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p><strong>Duration:</strong> {selectedTreatment.duration}</p>
-                <p><strong>Price:</strong> {selectedTreatment.price}</p>
-              </CardContent>
-            </Card>
-          </DialogContent>
-        </Dialog>
+
+      {selectedPatient && (
+        <div className="mt-8">
+          {isLoadingPlan ? (
+            <p>Loading plan...</p>
+          ) : treatmentPlan ? (
+            <div className="w-full h-[70vh] border rounded-lg">
+              <MindMap patientId={selectedPatient.id} initialNodes={treatmentPlan.nodes} initialEdges={treatmentPlan.edges} />
+            </div>
+          ) : (
+            <div className="text-center">
+              <p>No treatment plan found for this patient.</p>
+              <Button onClick={handleAddPlan} className="mt-4">Add a Plan</Button>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

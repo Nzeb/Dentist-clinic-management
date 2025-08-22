@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "migrate": "ts-node src/server/db/migrate.ts"
+    "copy-migrations": "cpr src/server/db/migrations dist/src/server/db/migrations -o",
+    "compile": "tsc && npm run copy-migrations",
+    "migrate": "npm run compile && node dist/src/server/db/migrate.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -45,6 +47,7 @@
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
     "cookie": "^1.0.2",
+    "cpr": "^3.0.1",
     "date-fns": "4.1.0",
     "dotenv": "^17.2.1",
     "embla-carousel-react": "8.5.1",
@@ -62,6 +65,7 @@
     "react-dom": "^18",
     "react-hook-form": "^7.54.1",
     "react-resizable-panels": "^2.1.7",
+    "reactflow": "^11.11.4",
     "recharts": "2.15.0",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",

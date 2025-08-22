@@ -95,6 +95,16 @@ export interface DBPatient {
   }
   
   export type PrescriptionStatus = 'active' | 'completed' | 'cancelled';
+
+  // Treatment Plan related types
+  export interface DBTreatmentPlan {
+    id: number;
+    patient_id: number;
+    nodes: any[];
+    edges: any[];
+    created_at?: string;
+    updated_at?: string;
+  }
   
   // Notification related types
   export interface DBNotification {
