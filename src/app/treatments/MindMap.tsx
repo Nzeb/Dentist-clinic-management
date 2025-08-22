@@ -36,18 +36,21 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
 
   useEffect(() => {
     setNodes((nds) =>
-      nds.map((node) => ({
-        ...node,
-        data: {
-          ...node.data,
-          onNoteChange: handleNodeNoteChange,
-          onLabelChange: handleNodeLabelChange,
-          onAdditionalNoteChange: handleNodeAdditionalNoteChange,
-          onDelete: handleNodeDelete,
-        },
-      }))
+      nds.map((node) => {
+        if (node.data.onDelete) return node; // Already enriched
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            onNoteChange: handleNodeNoteChange,
+            onLabelChange: handleNodeLabelChange,
+            onColorChange: handleNodeColorChange,
+            onDelete: handleNodeDelete,
+          },
+        };
+      })
     );
-  }, [initialNodes]);
+  }, [nodes, handleNodeNoteChange, handleNodeLabelChange, handleNodeColorChange, handleNodeDelete]);
 
   useEffect(() => {
     if (nodes !== initialNodes || edges !== initialEdges) {
@@ -67,77 +70,42 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
     [setEdges],
   );
 
-  const handleNodeNoteChange = (id: string, notes: string) => {
+  const handleNodeNoteChange = useCallback((id: string, notes: string) => {
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === id) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              notes,
-            },
-          };
+          return { ...node, data: { ...node.data, notes } };
         }
         return node;
       })
     );
-  };
+  }, [setNodes]);
 
-  const handleNodeDelete = (id: string) => {
+  const handleNodeDelete = useCallback((id: string) => {
     setNodes((nds) => nds.filter((node) => node.id !== id));
-  };
+  }, [setNodes]);
 
-  const handleNodeLabelChange = (id: string, label: string) => {
+  const handleNodeLabelChange = useCallback((id: string, label: string) => {
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === id) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              label,
-            },
-          };
+          return { ...node, data: { ...node.data, label } };
         }
         return node;
       })
     );
-  };
+  }, [setNodes]);
 
-  const handleNodeAdditionalNoteChange = (id: string, additionalNotes: string) => {
+  const handleNodeColorChange = useCallback((id: string, color: string) => {
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === id) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              additionalNotes,
-            },
-          };
+          return { ...node, data: { ...node.data, color } };
         }
         return node;
       })
     );
-  };
-
-  const handleNodeColorChange = (id: string, color: string) => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === id) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              color,
-            },
-          };
-        }
-        return node;
-      })
-    );
-  };
+  }, [setNodes]);
 
   const addNode = () => {
     const newNode = {
@@ -148,11 +116,9 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
         label: newNodeLabel || `Node ${nodes.length + 1}`,
         onNoteChange: handleNodeNoteChange,
         onLabelChange: handleNodeLabelChange,
-        onAdditionalNoteChange: handleNodeAdditionalNoteChange,
         onColorChange: handleNodeColorChange,
         onDelete: handleNodeDelete,
         notes: '',
-        additionalNotes: '',
         color: newNodeColor,
       },
     };
