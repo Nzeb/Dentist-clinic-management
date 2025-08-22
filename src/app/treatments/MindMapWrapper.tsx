@@ -9,51 +9,49 @@ import { Node, Edge } from 'reactflow';
 
 export default function MindMapWrapper({ patientId, initialPlan }: { patientId: number, initialPlan: DBTreatmentPlan | null }) {
   const { user } = useAuth();
-  const [plan, setPlan] = useState(initialPlan);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialPlan?.nodes || []);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialPlan?.edges || []);
 
   const handleNodeNoteChange = useCallback((id: string, notes: string) => {
-    setPlan(p => {
-      if (!p) return p;
-      return {
-        ...p,
-        nodes: p.nodes.map(n => n.id === id ? { ...n, data: { ...n.data, notes } } : n)
-      }
-    });
-  }, []);
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return { ...node, data: { ...node.data, notes } };
+        }
+        return node;
+      })
+    );
+  }, [setNodes]);
 
   const handleNodeDelete = useCallback((id: string) => {
-    setPlan(p => {
-      if (!p) return p;
-      return {
-        ...p,
-        nodes: p.nodes.filter(n => n.id !== id)
-      }
-    });
-  }, []);
+    setNodes((nds) => nds.filter((node) => node.id !== id));
+  }, [setNodes]);
 
   const handleNodeLabelChange = useCallback((id: string, label: string) => {
-    setPlan(p => {
-      if (!p) return p;
-      return {
-        ...p,
-        nodes: p.nodes.map(n => n.id === id ? { ...n, data: { ...n.data, label } } : n)
-      }
-    });
-  }, []);
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return { ...node, data: { ...node.data, label } };
+        }
+        return node;
+      })
+    );
+  }, [setNodes]);
 
   const handleNodeColorChange = useCallback((id: string, color: string) => {
-    setPlan(p => {
-      if (!p) return p;
-      return {
-        ...p,
-        nodes: p.nodes.map(n => n.id === id ? { ...n, data: { ...n.data, color } } : n)
-      }
-    });
-  }, []);
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return { ...node, data: { ...node.data, color } };
+        }
+        return node;
+      })
+    );
+  }, [setNodes]);
 
   const enrichedNodes = useMemo(() => {
-    if (!plan) return [];
-    return plan.nodes.map((node) => ({
+    return nodes.map((node) => ({
       ...node,
       data: {
         ...node.data,
@@ -63,49 +61,43 @@ export default function MindMapWrapper({ patientId, initialPlan }: { patientId: 
         onDelete: handleNodeDelete,
       },
     }));
-  }, [plan, handleNodeNoteChange, handleNodeLabelChange, handleNodeColorChange, handleNodeDelete]);
+  }, [nodes, handleNodeNoteChange, handleNodeLabelChange, handleNodeColorChange, handleNodeDelete]);
 
   useEffect(() => {
-    if (plan) {
-      const savePlan = async () => {
-        await fetch('/api/treatments/plan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ patientId, nodes: plan.nodes, edges: plan.edges }),
-        });
-      };
-      savePlan();
-    }
-  }, [patientId, plan]);
+    const savePlan = async () => {
+      await fetch('/api/treatments/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patientId, nodes, edges }),
+      });
+    };
+    savePlan();
+  }, [patientId, nodes, edges]);
 
   const addNode = (label: string, color: string) => {
-    setPlan(p => {
-      if (!p) return p;
-      const newNode = {
-        id: `${p.nodes.length + 1}`,
-        type: 'custom',
-        position: { x: Math.random() * 400, y: Math.random() * 400 },
-        data: {
-          label: label || `Node ${p.nodes.length + 1}`,
-          notes: '',
-          color: color,
-        },
-      };
-      return {
-        ...p,
-        nodes: [...p.nodes, newNode]
-      }
-    });
+    const newNode = {
+      id: `${nodes.length + 1}`,
+      type: 'custom',
+      position: { x: Math.random() * 400, y: Math.random() * 400 },
+      data: {
+        label: label || `Node ${nodes.length + 1}`,
+        notes: '',
+        color: color,
+      },
+    };
+    setNodes((nds) => nds.concat(newNode));
   };
 
-  if (!plan) {
+  if (!initialPlan) {
     return <div>No plan</div>;
   }
 
   return (
     <MindMap
       nodes={enrichedNodes}
-      edges={plan.edges}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
       user={user}
       addNode={addNode}
     />

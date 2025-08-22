@@ -1,33 +1,36 @@
 'use client'
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
   Background,
-  useNodesState,
-  useEdgesState,
   addEdge,
   Node,
   Edge,
+  OnNodesChange,
+  OnEdgesChange,
 } from 'reactflow';
 import CustomNode from './CustomNode';
 
 import 'reactflow/dist/style.css';
 
-export default function MindMap({ nodes, edges, user, addNode }: { nodes: Node[], edges: Edge[], user: any, addNode: (label: string, color: string) => void }) {
-  const [rfNodes, setRfNodes, onNodesChange] = useNodesState(nodes);
-  const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState(edges);
+export default function MindMap({
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
+  user,
+  addNode,
+}: {
+  nodes: Node[],
+  edges: Edge[],
+  onNodesChange: OnNodesChange,
+  onEdgesChange: OnEdgesChange,
+  user: any,
+  addNode: (label: string, color: string) => void,
+}) {
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
-
-  useEffect(() => {
-    setRfNodes(nodes);
-  }, [nodes, setRfNodes]);
-
-  useEffect(() => {
-    setRfEdges(edges);
-  }, [edges, setRfEdges]);
-
   const [newNodeLabel, setNewNodeLabel] = useState('');
   const [newNodeColor, setNewNodeColor] = useState('#e2e8f0');
 
@@ -62,11 +65,11 @@ export default function MindMap({ nodes, edges, user, addNode }: { nodes: Node[]
       )}
       <div style={{ width: '100%', height: '70vh' }}>
         <ReactFlow
-          nodes={rfNodes}
-          edges={rfEdges}
+          nodes={nodes}
+          edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnect={(params) => setRfEdges((eds) => addEdge(params, eds))}
+          onConnect={(params) => onEdgesChange([{ type: 'add', item: addEdge(params, edges) }])}
           nodeTypes={nodeTypes}
           nodesDraggable={isEditable}
           nodesConnectable={isEditable}
