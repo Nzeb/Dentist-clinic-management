@@ -34,42 +34,6 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
   const [newNodeLabel, setNewNodeLabel] = useState('');
   const [newNodeColor, setNewNodeColor] = useState('#e2e8f0');
 
-  useEffect(() => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.data.onDelete) return node; // Already enriched
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            onNoteChange: handleNodeNoteChange,
-            onLabelChange: handleNodeLabelChange,
-            onColorChange: handleNodeColorChange,
-            onDelete: handleNodeDelete,
-          },
-        };
-      })
-    );
-  }, [nodes, handleNodeNoteChange, handleNodeLabelChange, handleNodeColorChange, handleNodeDelete]);
-
-  useEffect(() => {
-    if (nodes !== initialNodes || edges !== initialEdges) {
-      const savePlan = async () => {
-        await fetch('/api/treatments/plan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ patientId, nodes, edges }),
-        });
-      };
-      savePlan();
-    }
-  }, [patientId, nodes, edges]);
-
-  const onConnect = useCallback(
-    (params: any) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges],
-  );
-
   const handleNodeNoteChange = useCallback((id: string, notes: string) => {
     setNodes((nds) =>
       nds.map((node) => {
@@ -106,6 +70,42 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
       })
     );
   }, [setNodes]);
+
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.data.onDelete) return node; // Already enriched
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            onNoteChange: handleNodeNoteChange,
+            onLabelChange: handleNodeLabelChange,
+            onColorChange: handleNodeColorChange,
+            onDelete: handleNodeDelete,
+          },
+        };
+      })
+    );
+  }, [nodes, handleNodeNoteChange, handleNodeLabelChange, handleNodeColorChange, handleNodeDelete]);
+
+  useEffect(() => {
+    if (nodes !== initialNodes || edges !== initialEdges) {
+      const savePlan = async () => {
+        await fetch('/api/treatments/plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ patientId, nodes, edges }),
+        });
+      };
+      savePlan();
+    }
+  }, [patientId, nodes, edges]);
+
+  const onConnect = useCallback(
+    (params: any) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges],
+  );
 
   const addNode = () => {
     const newNode = {
