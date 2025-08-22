@@ -17,12 +17,12 @@ import CustomNode from './CustomNode';
 import 'reactflow/dist/style.css';
 
 const initialNodes: Node[] = [
-  { id: '1', type: 'custom', position: { x: 0, y: 0 }, data: { label: 'Diagnosis' }, style: { backgroundColor: '#ffcce6' } },
-  { id: '2', type: 'custom', position: { x: 0, y: 100 }, data: { label: 'Medications' }, style: { backgroundColor: '#cce6ff' } },
-  { id: '3', type: 'custom', position: { x: 200, y: 100 }, data: { label: 'Tests' }, style: { backgroundColor: '#ccffcc' } },
-  { id: '4', type: 'custom', position: { x: 0, y: 200 }, data: { label: 'Procedures' }, style: { backgroundColor: '#ffffcc' } },
-  { id: '5', type: 'custom', position: { x: 200, y: 200 }, data: { label: 'Lifestyle' }, style: { backgroundColor: '#e6ccff' } },
-  { id: '6', type: 'custom', position: { x: 100, y: 300 }, data: { label: 'Follow-up' }, style: { backgroundColor: '#ffebcc' } },
+  { id: '1', type: 'custom', position: { x: 0, y: 0 }, data: { label: 'Diagnosis', color: '#ffcce6' } },
+  { id: '2', type: 'custom', position: { x: 0, y: 100 }, data: { label: 'Medications', color: '#cce6ff' } },
+  { id: '3', type: 'custom', position: { x: 200, y: 100 }, data: { label: 'Tests', color: '#ccffcc' } },
+  { id: '4', type: 'custom', position: { x: 0, y: 200 }, data: { label: 'Procedures', color: '#ffffcc' } },
+  { id: '5', type: 'custom', position: { x: 200, y: 200 }, data: { label: 'Lifestyle', color: '#e6ccff' } },
+  { id: '6', type: 'custom', position: { x: 100, y: 300 }, data: { label: 'Follow-up', color: '#ffebcc' } },
 ];
 const initialEdges: Edge[] = [];
 
@@ -42,6 +42,7 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
           ...node.data,
           onNoteChange: handleNodeNoteChange,
           onLabelChange: handleNodeLabelChange,
+          onAdditionalNoteChange: handleNodeAdditionalNoteChange,
           onDelete: handleNodeDelete,
         },
       }))
@@ -104,6 +105,40 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
     );
   };
 
+  const handleNodeAdditionalNoteChange = (id: string, additionalNotes: string) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              additionalNotes,
+            },
+          };
+        }
+        return node;
+      })
+    );
+  };
+
+  const handleNodeColorChange = (id: string, color: string) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              color,
+            },
+          };
+        }
+        return node;
+      })
+    );
+  };
+
   const addNode = () => {
     const newNode = {
       id: `${nodes.length + 1}`,
@@ -113,10 +148,13 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
         label: newNodeLabel || `Node ${nodes.length + 1}`,
         onNoteChange: handleNodeNoteChange,
         onLabelChange: handleNodeLabelChange,
+        onAdditionalNoteChange: handleNodeAdditionalNoteChange,
+        onColorChange: handleNodeColorChange,
         onDelete: handleNodeDelete,
         notes: '',
+        additionalNotes: '',
+        color: newNodeColor,
       },
-      style: { backgroundColor: newNodeColor },
     };
     setNodes((nds) => nds.concat(newNode));
     setNewNodeLabel('');
@@ -157,6 +195,17 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
           nodesDraggable={isEditable}
           nodesConnectable={isEditable}
           elementsSelectable={isEditable}
+          connectionLineStyle={{ stroke: '#000' }}
+          defaultEdgeOptions={{
+            animated: true,
+            markerEnd: {
+              type: 'arrowclosed',
+              color: '#000',
+            },
+            style: {
+              stroke: '#000',
+            },
+          }}
         >
           <Controls />
           <MiniMap />
