@@ -1,4 +1,6 @@
 // src/server/db/migrate.ts
+import { config } from 'dotenv';
+config({ path: '.env.local' });
 import { pool } from './config';
 import fs from 'fs';
 import path from 'path';
