@@ -32,7 +32,7 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
   const [newNodeLabel, setNewNodeLabel] = useState('');
-  const [newNodeColor, setNewNodeColor] = useState('#ffffff');
+  const [newNodeColor, setNewNodeColor] = useState('#e2e8f0');
 
   useEffect(() => {
     setNodes((nds) =>

@@ -24,10 +24,10 @@ export default memo(({ data, id, style }: { data: any, id: string, style: any })
     <>
       <Handle type="target" position={Position.Top} />
       <Card style={{ width: 200 }}>
-        <CardHeader style={{ backgroundColor: style?.backgroundColor, color: '#fff', padding: '10px' }}>
+        <CardHeader style={{ backgroundColor: style?.backgroundColor, color: '#000', padding: '10px' }}>
           <CardTitle>
             {isExpanded ? (
-              <input type="text" defaultValue={data.label} onChange={onLabelChange} className="bg-transparent text-white w-full" />
+              <input type="text" defaultValue={data.label} onChange={onLabelChange} className="bg-transparent text-black w-full" />
             ) : (
               data.label
             )}
