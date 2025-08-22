@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useMemo, useState } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -16,111 +15,16 @@ import CustomNode from './CustomNode';
 
 import 'reactflow/dist/style.css';
 
-const initialNodes: Node[] = [
-  { id: '1', type: 'custom', position: { x: 0, y: 0 }, data: { label: 'Diagnosis', color: '#ffcce6' } },
-  { id: '2', type: 'custom', position: { x: 0, y: 100 }, data: { label: 'Medications', color: '#cce6ff' } },
-  { id: '3', type: 'custom', position: { x: 200, y: 100 }, data: { label: 'Tests', color: '#ccffcc' } },
-  { id: '4', type: 'custom', position: { x: 0, y: 200 }, data: { label: 'Procedures', color: '#ffffcc' } },
-  { id: '5', type: 'custom', position: { x: 200, y: 200 }, data: { label: 'Lifestyle', color: '#e6ccff' } },
-  { id: '6', type: 'custom', position: { x: 100, y: 300 }, data: { label: 'Follow-up', color: '#ffebcc' } },
-];
-const initialEdges: Edge[] = [];
-
-export default function MindMap({ patientId, initialNodes, initialEdges }: { patientId: number, initialNodes: Node[], initialEdges: Edge[] }) {
-  const { user } = useAuth();
+export default function MindMap({ nodes, edges, user, addNode }: { nodes: Node[], edges: Edge[], user: any, addNode: (label: string, color: string) => void }) {
+  const [rfNodes, setRfNodes, onNodesChange] = useNodesState(nodes);
+  const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState(edges);
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
+
   const [newNodeLabel, setNewNodeLabel] = useState('');
   const [newNodeColor, setNewNodeColor] = useState('#e2e8f0');
 
-  const [initialNodesWithHandlers, setInitialNodesWithHandlers] = useState(initialNodes);
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodesWithHandlers);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
-  const handleNodeNoteChange = useCallback((id: string, notes: string) => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === id) {
-          return { ...node, data: { ...node.data, notes } };
-        }
-        return node;
-      })
-    );
-  }, [setNodes]);
-
-  const handleNodeDelete = useCallback((id: string) => {
-    setNodes((nds) => nds.filter((node) => node.id !== id));
-  }, [setNodes]);
-
-  const handleNodeLabelChange = useCallback((id: string, label: string) => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === id) {
-          return { ...node, data: { ...node.data, label } };
-        }
-        return node;
-      })
-    );
-  }, [setNodes]);
-
-  const handleNodeColorChange = useCallback((id: string, color: string) => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === id) {
-          return { ...node, data: { ...node.data, color } };
-        }
-        return node;
-      })
-    );
-  }, [setNodes]);
-
-  useEffect(() => {
-    const enrichedNodes = initialNodes.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        onNoteChange: handleNodeNoteChange,
-        onLabelChange: handleNodeLabelChange,
-        onColorChange: handleNodeColorChange,
-        onDelete: handleNodeDelete,
-      },
-    }));
-    setInitialNodesWithHandlers(enrichedNodes);
-  }, [initialNodes, handleNodeNoteChange, handleNodeLabelChange, handleNodeColorChange, handleNodeDelete]);
-
-  useEffect(() => {
-    if (nodes !== initialNodes || edges !== initialEdges) {
-      const savePlan = async () => {
-        await fetch('/api/treatments/plan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ patientId, nodes, edges }),
-        });
-      };
-      savePlan();
-    }
-  }, [patientId, nodes, edges]);
-
-  const onConnect = useCallback(
-    (params: any) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges],
-  );
-
-  const addNode = () => {
-    const newNode = {
-      id: `${nodes.length + 1}`,
-      type: 'custom',
-      position: { x: Math.random() * 400, y: Math.random() * 400 },
-      data: {
-        label: newNodeLabel || `Node ${nodes.length + 1}`,
-        onNoteChange: handleNodeNoteChange,
-        onLabelChange: handleNodeLabelChange,
-        onColorChange: handleNodeColorChange,
-        onDelete: handleNodeDelete,
-        notes: '',
-        color: newNodeColor,
-      },
-    };
-    setNodes((nds) => nds.concat(newNode));
+  const handleAddNode = () => {
+    addNode(newNodeLabel, newNodeColor);
     setNewNodeLabel('');
   };
 
@@ -145,16 +49,16 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
               />
             ))}
           </div>
-          <button onClick={addNode} style={{ marginLeft: 5 }}>Add Node</button>
+          <button onClick={handleAddNode} style={{ marginLeft: 5 }}>Add Node</button>
         </div>
       )}
       <div style={{ width: '100%', height: '70vh' }}>
         <ReactFlow
-          nodes={nodes}
-          edges={edges}
+          nodes={rfNodes}
+          edges={rfEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
+          onConnect={(params) => setRfEdges((eds) => addEdge(params, eds))}
           nodeTypes={nodeTypes}
           nodesDraggable={isEditable}
           nodesConnectable={isEditable}

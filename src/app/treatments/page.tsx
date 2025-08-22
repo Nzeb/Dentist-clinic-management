@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAppContext } from '../contexts/AppContext'
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import MindMap from './MindMap'
+import MindMapWrapper from './MindMapWrapper'
 import { DBPatient, DBTreatmentPlan } from '@/types/db'
 
 export default function TreatmentsPage() {
@@ -69,7 +69,7 @@ export default function TreatmentsPage() {
             <p>Loading plan...</p>
           ) : treatmentPlan ? (
             <div className="w-full h-[70vh] border rounded-lg">
-              <MindMap patientId={selectedPatient.id} initialNodes={treatmentPlan.nodes} initialEdges={treatmentPlan.edges} />
+              <MindMapWrapper patientId={selectedPatient.id} initialPlan={treatmentPlan} />
             </div>
           ) : (
             <div className="text-center">
