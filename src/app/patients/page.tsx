@@ -15,6 +15,7 @@ import { UserPlus, Search, Plus, Trash, Edit, Paperclip, Calendar, FileText, Bel
 import { AddHistoryEntry } from '../components/AddHistoryEntry'
 import { AddPrescription } from '../components/AddPrescription'
 import { SpecialNotes } from '../components/SpecialNotes'
+import ManagementPlan from '../components/ManagementPlan'
 import { Label } from "@/components/ui/label"
 import { DBHistoryEntry, DBPatient, DBPrescription } from '@/types/db'
 import { set } from 'react-hook-form'
@@ -374,6 +375,7 @@ export default function PatientsPage() {
                   <TabsTrigger value="history">History</TabsTrigger>
                   <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
                   <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                  <TabsTrigger value="management-plan">Management Plan</TabsTrigger>
                   {/* <TabsTrigger value="notifications">Notifications</TabsTrigger> */}
                 </TabsList>
                 <div className="flex-grow flex overflow-hidden">
@@ -391,6 +393,16 @@ export default function PatientsPage() {
                           <p><strong>Email:</strong> {selectedPatient.email || 'Not provided'}</p>
                           <p><strong>Last Visit:</strong> {selectedPatient.last_visit}</p>
                           <p><strong>Assigned Doctor:</strong> {doctors.find(d => d.id === selectedPatient.assigned_doctor_id)?.fullName || 'Not assigned'}</p>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    <TabsContent value="management-plan" className="h-full">
+                      <Card className="h-full">
+                        <CardHeader>
+                          <CardTitle>Management Plan</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ManagementPlan patient={selectedPatient} />
                         </CardContent>
                       </Card>
                     </TabsContent>
