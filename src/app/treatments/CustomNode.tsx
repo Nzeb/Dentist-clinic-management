@@ -30,7 +30,7 @@ export default memo(({ data, id }: { data: any, id: string }) => {
         <button onClick={() => setIsExpanded(!isExpanded)} style={{ marginTop: 5 }}>
           {isExpanded ? 'Collapse' : 'Expand'}
         </button>
-        <button onClick={() => data.onDelete(id)} style={{ marginTop: 5, marginLeft: 5 }}>
+        <button onClick={() => data.onDelete && data.onDelete(id)} style={{ marginTop: 5, marginLeft: 5 }}>
           Delete
         </button>
         {isExpanded && (

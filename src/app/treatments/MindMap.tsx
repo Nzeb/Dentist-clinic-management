@@ -122,7 +122,7 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
     setNewNodeLabel('');
   };
 
-  const isEditable = user?.role === 'admin' || user?.role === 'doctor';
+  const isEditable = user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'doctor';
 
   return (
     <div>
