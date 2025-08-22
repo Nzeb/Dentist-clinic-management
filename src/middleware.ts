@@ -24,7 +24,7 @@ export async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl
 
     if (pathname.startsWith('/users') && userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard', req.url))
+      return NextResponse.redirect(new URL('/patients', req.url))
     }
 
     if (pathname.startsWith('/api/users') && userRole !== 'admin') {
@@ -32,7 +32,7 @@ export async function middleware(req: NextRequest) {
     }
 
     if (pathname.startsWith('/my-patients') && userRole !== 'doctor') {
-      return NextResponse.redirect(new URL('/dashboard', req.url))
+      return NextResponse.redirect(new URL('/patients', req.url))
     }
 
     return NextResponse.next()

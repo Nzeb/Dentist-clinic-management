@@ -9,7 +9,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { LayoutDashboard, Users, Calendar, Stethoscope, Receipt, LogOut } from 'lucide-react'
 
 const adminNavItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'User Management', href: '/users', icon: Users },
   { name: 'Patients', href: '/patients', icon: Users },
   { name: 'Appointments', href: '/appointments', icon: Calendar },
@@ -18,14 +17,12 @@ const adminNavItems = [
 ]
 
 const doctorNavItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'My Patients', href: '/my-patients', icon: Users },
   { name: 'Appointments', href: '/appointments', icon: Calendar },
   { name: 'Profile', href: '/profile', icon: Receipt },
 ]
 
 const receptionNavItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Patients', href: '/patients', icon: Users },
     { name: 'Appointments', href: '/appointments', icon: Calendar },
     { name: 'Profile', href: '/profile', icon: Receipt },
