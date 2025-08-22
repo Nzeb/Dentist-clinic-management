@@ -13,14 +13,10 @@ export default memo(({ data, id }: { data: any, id: string }) => {
 
   return (
     <>
-      <Handle type="target" position={Position.Top} id="a" />
-      <Handle type="source" position={Position.Top} id="b" />
-      <Handle type="target" position={Position.Bottom} id="c" />
-      <Handle type="source" position={Position.Bottom} id="d" />
-      <Handle type="target" position={Position.Left} id="e" />
-      <Handle type="source" position={Position.Left} id="f" />
-      <Handle type="target" position={Position.Right} id="g" />
-      <Handle type="source" position={Position.Right} id="h" />
+      <Handle position={Position.Top} id="top" />
+      <Handle position={Position.Bottom} id="bottom" />
+      <Handle position={Position.Left} id="left" />
+      <Handle position={Position.Right} id="right" />
       <Card style={{ width: 250 }}>
         <CardHeader style={{ backgroundColor: data.color, color: '#000', padding: '10px' }}>
           <CardTitle>{data.label}</CardTitle>

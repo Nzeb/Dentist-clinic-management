@@ -74,6 +74,7 @@ export default function MindMap({
           nodesDraggable={isEditable}
           nodesConnectable={isEditable}
           elementsSelectable={isEditable}
+          connectionMode="loose"
           connectionLineStyle={{ stroke: '#000' }}
           defaultEdgeOptions={{
             animated: true,
