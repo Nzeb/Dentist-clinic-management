@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -19,6 +19,14 @@ export default function MindMap({ nodes, edges, user, addNode }: { nodes: Node[]
   const [rfNodes, setRfNodes, onNodesChange] = useNodesState(nodes);
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState(edges);
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
+
+  useEffect(() => {
+    setRfNodes(nodes);
+  }, [nodes, setRfNodes]);
+
+  useEffect(() => {
+    setRfEdges(edges);
+  }, [edges, setRfEdges]);
 
   const [newNodeLabel, setNewNodeLabel] = useState('');
   const [newNodeColor, setNewNodeColor] = useState('#e2e8f0');
