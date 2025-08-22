@@ -128,14 +128,15 @@ export default function MindMap({ patientId, initialNodes = [], initialEdges = [
   return (
     <div>
       {isEditable && (
-        <div style={{ marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
           <input
             type="text"
             value={newNodeLabel}
             onChange={(e) => setNewNodeLabel(e.target.value)}
             placeholder="New node label"
+            className="p-2 border rounded"
           />
-          <div style={{ marginLeft: 5 }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginLeft: 10 }}>
             {['#ffcce6', '#cce6ff', '#ccffcc', '#ffffcc', '#e6ccff', '#ffebcc'].map(color => (
               <button
                 key={color}
@@ -144,7 +145,7 @@ export default function MindMap({ patientId, initialNodes = [], initialEdges = [
               />
             ))}
           </div>
-          <button onClick={addNode} style={{ marginLeft: 5 }}>Add Node</button>
+          <button onClick={addNode} style={{ marginLeft: 10, padding: '8px 12px', background: '#007bff', color: 'white', border: 'none', borderRadius: 5 }}>Add Node</button>
         </div>
       )}
       <div style={{ width: '100%', height: '70vh' }}>
@@ -158,6 +159,7 @@ export default function MindMap({ patientId, initialNodes = [], initialEdges = [
           nodesDraggable={isEditable}
           nodesConnectable={isEditable}
           elementsSelectable={isEditable}
+          fitView
           connectionLineStyle={{ stroke: '#000' }}
           defaultEdgeOptions={{
             animated: true,
