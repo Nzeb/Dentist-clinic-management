@@ -26,27 +26,13 @@ const initialNodes: Node[] = [
 ];
 const initialEdges: Edge[] = [];
 
-export default function MindMap({ patientId }: { patientId: number }) {
+export default function MindMap({ patientId, initialNodes, initialEdges }: { patientId: number, initialNodes: Node[], initialEdges: Edge[] }) {
   const { user } = useAuth();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
   const [newNodeLabel, setNewNodeLabel] = useState('');
   const [newNodeColor, setNewNodeColor] = useState('#ffffff');
-
-  useEffect(() => {
-    const fetchPlan = async () => {
-      const response = await fetch(`/api/treatments/plan?patientId=${patientId}`);
-      if (response.ok) {
-        const plan = await response.json();
-        if (plan) {
-          setNodes(plan.nodes || initialNodes);
-          setEdges(plan.edges || initialEdges);
-        }
-      }
-    };
-    fetchPlan();
-  }, [patientId, setNodes, setEdges]);
 
   useEffect(() => {
     const nodesWithOnChange = nodes.map((node) => ({
@@ -71,14 +57,14 @@ export default function MindMap({ patientId }: { patientId: number }) {
       };
       savePlan();
     }
-  }, [patientId, nodes, edges, setNodes]);
+  }, [patientId, nodes, edges]);
 
   const onConnect = useCallback(
     (params: any) => setEdges((eds) => addEdge(params, eds)),
     [setEdges],
   );
 
-  const handleNodeChange = (id: string, notes: string) => {
+  const handleNodeNoteChange = (id: string, notes: string) => {
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === id) {
@@ -99,6 +85,23 @@ export default function MindMap({ patientId }: { patientId: number }) {
     setNodes((nds) => nds.filter((node) => node.id !== id));
   };
 
+  const handleNodeLabelChange = (id: string, label: string) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label,
+            },
+          };
+        }
+        return node;
+      })
+    );
+  };
+
   const addNode = () => {
     const newNode = {
       id: `${nodes.length + 1}`,
@@ -106,7 +109,8 @@ export default function MindMap({ patientId }: { patientId: number }) {
       position: { x: Math.random() * 400, y: Math.random() * 400 },
       data: {
         label: newNodeLabel || `Node ${nodes.length + 1}`,
-        onChange: handleNodeChange,
+        onNoteChange: handleNodeNoteChange,
+        onLabelChange: handleNodeLabelChange,
         onDelete: handleNodeDelete,
         notes: '',
       },

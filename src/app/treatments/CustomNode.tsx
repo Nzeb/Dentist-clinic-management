@@ -7,8 +7,14 @@ export default memo(({ data, id }: { data: any, id: string }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const onNoteChange = (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (data.onChange) {
-      data.onChange(id, evt.target.value);
+    if (data.onNoteChange) {
+      data.onNoteChange(id, evt.target.value);
+    }
+  };
+
+  const onLabelChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    if (data.onLabelChange) {
+      data.onLabelChange(id, evt.target.value);
     }
   };
 
@@ -16,7 +22,11 @@ export default memo(({ data, id }: { data: any, id: string }) => {
     <>
       <Handle type="target" position={Position.Top} />
       <div style={{ padding: 10, border: '1px solid #ddd', borderRadius: 5, background: '#fff' }}>
-        <div>{data.label}</div>
+        {isExpanded ? (
+          <input type="text" defaultValue={data.label} onChange={onLabelChange} />
+        ) : (
+          <div>{data.label}</div>
+        )}
         <button onClick={() => setIsExpanded(!isExpanded)} style={{ marginTop: 5 }}>
           {isExpanded ? 'Collapse' : 'Expand'}
         </button>
