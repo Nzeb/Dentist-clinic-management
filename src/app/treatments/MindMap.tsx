@@ -39,7 +39,9 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
       ...node,
       data: {
         ...node.data,
-        onChange: handleNodeChange,
+        onNoteChange: handleNodeNoteChange,
+        onLabelChange: handleNodeLabelChange,
+        onDelete: handleNodeDelete,
       },
     }));
 
@@ -57,7 +59,7 @@ export default function MindMap({ patientId, initialNodes, initialEdges }: { pat
       };
       savePlan();
     }
-  }, [patientId, nodes, edges]);
+  }, [patientId, nodes, edges, setNodes]);
 
   const onConnect = useCallback(
     (params: any) => setEdges((eds) => addEdge(params, eds)),
