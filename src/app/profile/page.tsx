@@ -74,7 +74,11 @@ export default function ProfilePage() {
         description: "Your password has been successfully changed.",
       })
       if (user?.firstLogin) {
-        router.push('/dashboard')
+        if (user.role.toLowerCase() === 'doctor') {
+          router.push('/my-patients');
+        } else {
+          router.push('/patients');
+        }
       }
     } catch (error) {
       toast({
