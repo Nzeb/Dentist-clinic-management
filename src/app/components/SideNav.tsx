@@ -13,7 +13,6 @@ const adminNavItems = [
   { name: 'User Management', href: '/users', icon: Users },
   { name: 'Patients', href: '/patients', icon: Users },
   { name: 'Appointments', href: '/appointments', icon: Calendar },
-  { name: 'Treatments', href: '/treatments', icon: Stethoscope },
   { name: 'Billing', href: '/billing', icon: Receipt },
   { name: 'Profile', href: '/profile', icon: Receipt },
 ]

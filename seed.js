@@ -22,6 +22,22 @@ async function seed() {
         }
 
         console.log('Test users created successfully');
+
+        await pool.query('DELETE FROM patients');
+        const patients = [
+            { name: 'John Doe', age: 30, sex: 'Male', address: '123 Main St', phone: '123-456-7890', email: 'john.doe@example.com', last_visit: '2023-10-26', assigned_doctor_id: 2 },
+            { name: 'Jane Smith', age: 25, sex: 'Female', address: '456 Oak Ave', phone: '987-654-3210', email: 'jane.smith@example.com', last_visit: '2023-11-15', assigned_doctor_id: 2 },
+        ];
+
+        for (const patient of patients) {
+            await pool.query(
+                'INSERT INTO patients (name, age, sex, address, phone, email, last_visit, assigned_doctor_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+                [patient.name, patient.age, patient.sex, patient.address, patient.phone, patient.email, patient.last_visit, patient.assigned_doctor_id]
+            );
+        }
+
+        console.log('Test patients created successfully');
+
     } catch (error) {
         console.error('Error seeding database:', error);
     } finally {
