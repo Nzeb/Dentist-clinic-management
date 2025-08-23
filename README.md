@@ -26,6 +26,10 @@ To get a local copy up and running, follow these simple steps.
    ```
    POSTGRES_URL=your_database_url
    JWT_SECRET=your_super_secret_key
+   STORAGE_PROVIDER=filesystem # or 'azure'
+   # Required if STORAGE_PROVIDER is 'azure'
+   AZURE_STORAGE_CONNECTION_STRING=your_azure_storage_connection_string
+   AZURE_STORAGE_CONTAINER_NAME=your_azure_storage_container_name
    ```
 4. Run the database migrations:
     ```sh

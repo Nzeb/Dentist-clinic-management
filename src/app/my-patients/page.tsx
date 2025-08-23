@@ -82,13 +82,29 @@ export default function MyPatientsPage() {
 
   const handleAddHistoryEntry = async (entry: { date: string; description: string; attachments: File[] }) => {
     if (selectedPatient) {
-      await addHistoryEntry({
-        patient_id: selectedPatient.id,
-        date: entry.date,
-        description: entry.description,
-        doctor_id: user?.id ?? 0,
-        attachments: entry.attachments.map(file => URL.createObjectURL(file))
-      })
+      const formData = new FormData();
+      formData.append('patient_id', selectedPatient.id.toString());
+      formData.append('date', entry.date);
+      formData.append('description', entry.description);
+      formData.append('doctor_id', user?.id?.toString() ?? '0');
+      entry.attachments.forEach(file => {
+        formData.append('attachments', file);
+      });
+
+      try {
+        const response = await fetch('/api/history', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to add history entry');
+        }
+
+        await getPatientHistory(selectedPatient.id);
+      } catch (error) {
+        console.error('Error adding history entry:', error);
+      }
     }
   }
 
