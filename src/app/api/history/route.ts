@@ -36,11 +36,33 @@ export async function POST(request: NextRequest) {
       uploadedFileUrls.push(url);
     }
 
-    const historyData: Omit<DBHistoryEntry, 'id' | 'created_at' | 'updated_at' | 'diagnosis' | 'treatment_notes'> = {
-      patient_id: parseInt(formData.get('patient_id') as string),
-      date: formData.get('date') as string,
-      description: formData.get('description') as string,
-      doctor_id: parseInt(formData.get('doctor_id') as string),
+    const patientIdStr = formData.get('patient_id') as string;
+    const doctorIdStr = formData.get('doctor_id') as string;
+    const date = formData.get('date') as string;
+    const description = formData.get('description') as string;
+
+    if (!patientIdStr || !doctorIdStr || !date || !description) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const patient_id = parseInt(patientIdStr, 10);
+    const doctor_id = parseInt(doctorIdStr, 10);
+
+    if (isNaN(patient_id) || isNaN(doctor_id)) {
+      return NextResponse.json(
+        { error: 'Invalid patient_id or doctor_id' },
+        { status: 400 }
+      );
+    }
+
+    const historyData = {
+      patient_id,
+      date,
+      description,
+      doctor_id,
       attachments: uploadedFileUrls,
     };
 
