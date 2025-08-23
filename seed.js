@@ -23,10 +23,13 @@ async function seed() {
 
         console.log('Test users created successfully');
 
+        const doctorResult = await pool.query("SELECT id FROM users WHERE username = 'doctor'");
+        const doctorId = doctorResult.rows[0].id;
+
         await pool.query('DELETE FROM patients');
         const patients = [
-            { name: 'John Doe', age: 30, sex: 'Male', address: '123 Main St', phone: '123-456-7890', email: 'john.doe@example.com', last_visit: '2023-10-26', assigned_doctor_id: 2 },
-            { name: 'Jane Smith', age: 25, sex: 'Female', address: '456 Oak Ave', phone: '987-654-3210', email: 'jane.smith@example.com', last_visit: '2023-11-15', assigned_doctor_id: 2 },
+            { name: 'John Doe', age: 30, sex: 'Male', address: '123 Main St', phone: '123-456-7890', email: 'john.doe@example.com', last_visit: '2023-10-26', assigned_doctor_id: doctorId },
+            { name: 'Jane Smith', age: 25, sex: 'Female', address: '456 Oak Ave', phone: '987-654-3210', email: 'jane.smith@example.com', last_visit: '2023-11-15', assigned_doctor_id: doctorId },
         ];
 
         for (const patient of patients) {

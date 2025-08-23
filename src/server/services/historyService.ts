@@ -18,10 +18,10 @@ export class HistoryService {
 
     async createHistoryEntry(entry: Omit<DBHistoryEntry, 'id'>): Promise<DBHistoryEntry> {
         const result = await pool.query(
-            `INSERT INTO history_entries (patient_id, date, description, attachments)
-       VALUES ($1, $2, $3, $4)
+            `INSERT INTO history_entries (patient_id, date, description, attachments, doctor_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-            [entry.patient_id, entry.date, entry.description, entry.attachments]
+            [entry.patient_id, entry.date, entry.description, entry.attachments, entry.doctor_id]
         );
         return result.rows[0];
     }

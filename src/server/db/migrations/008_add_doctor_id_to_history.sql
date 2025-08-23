@@ -1,0 +1,2 @@
+ALTER TABLE history_entries
+ADD COLUMN doctor_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
