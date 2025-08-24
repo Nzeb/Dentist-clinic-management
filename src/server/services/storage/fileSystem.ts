@@ -1,13 +1,33 @@
-import fs from 'fs/promises';
+import { promises as fs } from 'fs';
+import { createReadStream } from 'fs';
 import path from 'path';
 import { StorageService } from './index';
+import { Readable } from 'stream';
 
 export class FileSystemStorageService implements StorageService {
-  async upload(file: Buffer, fileName: string): Promise<string> {
-    const uploadDir = path.join(process.cwd(), 'uploads');
-    await fs.mkdir(uploadDir, { recursive: true });
-    const filePath = path.join(uploadDir, fileName);
+  private uploadDir = path.join(process.cwd(), 'public', 'uploads');
+
+  constructor() {
+    this.ensureUploadDirExists();
+  }
+
+  private async ensureUploadDirExists() {
+    await fs.mkdir(this.uploadDir, { recursive: true });
+  }
+
+  async upload(file: Buffer, fileName:string): Promise<string> {
+    const filePath = path.join(this.uploadDir, fileName);
     await fs.writeFile(filePath, file);
-    return `/uploads/${fileName}`;
+    return fileName;
+  }
+
+  async read(fileName: string): Promise<Readable> {
+    const filePath = path.join(this.uploadDir, fileName);
+    try {
+      await fs.access(filePath);
+      return createReadStream(filePath);
+    } catch (error) {
+      throw new Error('File not found');
+    }
   }
 }

@@ -39,10 +39,10 @@ export default function MyPatientsPage() {
   } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
-  const [selectedAttachments, setSelectedAttachments] = useState<{ url: string; description?: string }[]>([])
+  const [selectedAttachments, setSelectedAttachments] = useState<{ fileName: string; description?: string }[]>([])
 
   const handleViewAttachments = (attachments: string[]) => {
-    setSelectedAttachments(attachments.map(url => ({ url })));
+    setSelectedAttachments(attachments.map(fileName => ({ fileName })));
     setIsViewerOpen(true);
   };
 

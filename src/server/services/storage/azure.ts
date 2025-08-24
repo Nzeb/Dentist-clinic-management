@@ -1,5 +1,6 @@
 import { BlobServiceClient } from '@azure/storage-blob';
 import { StorageService } from './index';
+import { Readable } from 'stream';
 
 export class AzureBlobStorageService implements StorageService {
   private blobServiceClient: BlobServiceClient;
@@ -18,6 +19,16 @@ export class AzureBlobStorageService implements StorageService {
     await containerClient.createIfNotExists();
     const blockBlobClient = containerClient.getBlockBlobClient(fileName);
     await blockBlobClient.upload(file, file.length);
-    return blockBlobClient.url;
+    return fileName;
+  }
+
+  async read(fileName: string): Promise<Readable> {
+    const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
+    const blockBlobClient = containerClient.getBlockBlobClient(fileName);
+    const downloadBlockBlobResponse = await blockBlobClient.download(0);
+    if (!downloadBlockBlobResponse.readableStreamBody) {
+        throw new Error('File not found or is empty');
+    }
+    return downloadBlockBlobResponse.readableStreamBody as Readable;
   }
 }
