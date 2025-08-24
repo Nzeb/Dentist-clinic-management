@@ -1,8 +1,11 @@
 import { FileSystemStorageService } from './fileSystem';
 import { AzureBlobStorageService } from './azure';
 
+import { Readable } from 'stream';
+
 export interface StorageService {
   upload(file: Buffer, fileName: string): Promise<string>;
+  read(fileName: string): Promise<Readable>;
 }
 
 export const getStorageService = (): StorageService => {

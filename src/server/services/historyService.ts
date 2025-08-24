@@ -60,6 +60,23 @@ export class HistoryService {
         );
         return (result.rowCount ?? 0) > 0;
     }
+
+    async addAttachmentsToHistoryEntry(id: number, newAttachments: string[]): Promise<DBHistoryEntry | null> {
+        const currentEntryResult = await pool.query('SELECT attachments FROM history_entries WHERE id = $1', [id]);
+        if (currentEntryResult.rows.length === 0) {
+            return null;
+        }
+
+        const currentAttachments = currentEntryResult.rows[0].attachments || [];
+        const updatedAttachments = [...currentAttachments, ...newAttachments];
+
+        const result = await pool.query(
+            'UPDATE history_entries SET attachments = $1 WHERE id = $2 RETURNING *',
+            [updatedAttachments, id]
+        );
+
+        return result.rows[0] || null;
+    }
 }
 
 
