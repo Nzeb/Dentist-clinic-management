@@ -18,9 +18,21 @@ interface AttachmentViewerProps {
   attachments: Attachment[]
   isOpen: boolean
   onClose: () => void
+  description: string
 }
 
-export function AttachmentViewer({ attachments, isOpen, onClose }: AttachmentViewerProps) {
+const getFileNameFromUrl = (url: string) => {
+  try {
+    const path = new URL(url).pathname;
+    const parts = path.split('/');
+    return parts[parts.length - 1];
+  } catch (e) {
+    const parts = url.split('/');
+    return parts[parts.length - 1];
+  }
+}
+
+export function AttachmentViewer({ attachments, isOpen, onClose, description }: AttachmentViewerProps) {
   const [selectedAttachment, setSelectedAttachment] = useState<Attachment | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
@@ -40,6 +52,8 @@ export function AttachmentViewer({ attachments, isOpen, onClose }: AttachmentVie
   const handleImageLoad = () => {
     setIsLoading(false)
   }
+
+  const finalFileName = selectedAttachment ? getFileNameFromUrl(selectedAttachment.fileName) : '';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -66,7 +80,7 @@ export function AttachmentViewer({ attachments, isOpen, onClose }: AttachmentVie
                         onClick={() => handleSelectAttachment(attachment)}
                         className="w-full justify-start"
                       >
-                        {attachment.fileName}
+                        {getFileNameFromUrl(attachment.fileName)}
                       </Button>
                     </li>
                   ))}
@@ -99,8 +113,8 @@ export function AttachmentViewer({ attachments, isOpen, onClose }: AttachmentVie
                     </div>
                     <TransformComponent>
                       <img
-                        src={`/api/attachments/${selectedAttachment.fileName.replace(/^\/uploads\//, '')}`}
-                        alt={selectedAttachment.fileName}
+                        src={`/api/attachments/${finalFileName}`}
+                        alt={finalFileName}
                         className="max-w-full max-h-full object-contain"
                         onLoad={handleImageLoad}
                         onError={() => setIsLoading(false)}
@@ -122,7 +136,7 @@ export function AttachmentViewer({ attachments, isOpen, onClose }: AttachmentVie
             <CollapsibleContent asChild>
               <ScrollArea className="w-64 h-full p-4 bg-gray-50/50">
                 <h3 className="text-lg font-semibold mb-4">Description</h3>
-                <p>{selectedAttachment?.description || 'No description available.'}</p>
+                <p>{description || 'No description available.'}</p>
               </ScrollArea>
             </CollapsibleContent>
           </Collapsible>

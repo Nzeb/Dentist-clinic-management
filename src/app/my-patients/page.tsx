@@ -40,9 +40,11 @@ export default function MyPatientsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
   const [selectedAttachments, setSelectedAttachments] = useState<{ fileName: string; description?: string }[]>([])
+  const [viewerDescription, setViewerDescription] = useState('')
 
-  const handleViewAttachments = (attachments: string[]) => {
+  const handleViewAttachments = (attachments: string[], description: string) => {
     setSelectedAttachments(attachments.map(fileName => ({ fileName })));
+    setViewerDescription(description);
     setIsViewerOpen(true);
   };
 
@@ -384,7 +386,7 @@ export default function MyPatientsPage() {
                                     <p>{entry.description}</p>
                                     <div className="flex space-x-2">
                                       {entry.attachments && entry.attachments.length > 0 && (
-                                        <Button onClick={() => handleViewAttachments(entry.attachments)} className="mt-2">
+                                        <Button onClick={() => handleViewAttachments(entry.attachments, entry.description)} className="mt-2">
                                           <Paperclip className="h-4 w-4 mr-2" />
                                           View Attachments ({entry.attachments.length})
                                         </Button>
@@ -497,6 +499,7 @@ export default function MyPatientsPage() {
         isOpen={isViewerOpen}
         onClose={() => setIsViewerOpen(false)}
         attachments={selectedAttachments}
+        description={viewerDescription}
       />
     </div>
   )
