@@ -17,6 +17,7 @@ import { AddHistoryEntry } from '../components/AddHistoryEntry'
 import { AddPrescription } from '../components/AddPrescription'
 import { SpecialNotes } from '../components/SpecialNotes'
 import ManagementPlan from '../components/ManagementPlan'
+import { AttachmentViewer } from '../components/AttachmentViewer'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { DBHistoryEntry, DBPatient, DBPrescription } from '@/types/db'
 
@@ -37,6 +38,45 @@ export default function MyPatientsPage() {
     prescriptions: DBPrescription[];
   } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isViewerOpen, setIsViewerOpen] = useState(false)
+  const [selectedAttachments, setSelectedAttachments] = useState<{ url: string; description?: string }[]>([])
+
+  const handleViewAttachments = (attachments: string[]) => {
+    setSelectedAttachments(attachments.map(url => ({ url })));
+    setIsViewerOpen(true);
+  };
+
+  const handleAddAttachments = async (historyId: number, files: File[]) => {
+    if (files.length === 0) return;
+
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('attachments', file);
+    });
+
+    try {
+      const response = await fetch(`/api/history/${historyId}/attachments`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add attachments');
+      }
+
+      // Refresh the history data
+      if (selectedPatient) {
+        const patientHistory = await getPatientHistory(selectedPatient.id);
+        setPatientData(prevData => ({
+            ...prevData!,
+            history: patientHistory,
+        }));
+      }
+    } catch (error) {
+      console.error('Error adding attachments:', error);
+    }
+  };
+
 
   useEffect(() => {
     const loadPatients = async () => {
@@ -342,20 +382,25 @@ export default function MyPatientsPage() {
                                   <li key={entry.id} className="border-b pb-2">
                                     <p><strong>Date:</strong> {entry.date}</p>
                                     <p>{entry.description}</p>
-                                    {entry.attachments.length > 0 && (
-                                      <div className="flex items-center mt-2">
-                                        <Paperclip className="h-4 w-4 mr-2" />
-                                        <span>{entry.attachments.length} attachment(s)</span>
-                                      </div>     )}
-                                      <div className="mt-2">
-                                        {entry.attachments.map((attachment, index) => (
-                                         <div key={index} className="flex items-center mt-1">
-                                           <a href={attachment} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">
-                                             { `Attachment ${index + 1}`}
-                                           </a>
-                                       </div>
-                                       ))}
-                                      </div>
+                                    <div className="flex space-x-2">
+                                      {entry.attachments && entry.attachments.length > 0 && (
+                                        <Button onClick={() => handleViewAttachments(entry.attachments)} className="mt-2">
+                                          <Paperclip className="h-4 w-4 mr-2" />
+                                          View Attachments ({entry.attachments.length})
+                                        </Button>
+                                      )}
+                                      <Button onClick={() => document.getElementById(`add-attachment-${entry.id}`)?.click()} className="mt-2">
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Attachment
+                                      </Button>
+                                      <input
+                                        type="file"
+                                        id={`add-attachment-${entry.id}`}
+                                        style={{ display: 'none' }}
+                                        multiple
+                                        onChange={(e) => handleAddAttachments(entry.id, Array.from(e.target.files || []))}
+                                      />
+                                    </div>
                                   </li>
                                 ))) : (
                                   <p>No history available</p>
@@ -448,6 +493,11 @@ export default function MyPatientsPage() {
           </DialogContent>
         </Dialog>
       )}
+      <AttachmentViewer
+        isOpen={isViewerOpen}
+        onClose={() => setIsViewerOpen(false)}
+        attachments={selectedAttachments}
+      />
     </div>
   )
 }
