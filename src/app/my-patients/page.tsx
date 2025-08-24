@@ -377,37 +377,39 @@ export default function MyPatientsPage() {
                               </CollapsibleContent>
                             </Collapsible>
                           )}
-                          <ul className="space-y-4 mt-4">
+                          <div className="space-y-4 mt-4">
                             {patientData?.history && patientData.history.length > 0 ? (
                               patientData.history.filter(entry => entry.patient_id === selectedPatient.id)
                                 .map(entry => (
-                                  <li key={entry.id} className="border-b pb-2">
-                                    <p><strong>Date:</strong> {entry.date}</p>
-                                    <p>{entry.description}</p>
-                                    <div className="flex space-x-2">
-                                      {entry.attachments && entry.attachments.length > 0 && (
-                                        <Button onClick={() => handleViewAttachments(entry.attachments, entry.description)} className="mt-2">
-                                          <Paperclip className="h-4 w-4 mr-2" />
-                                          View Attachments ({entry.attachments.length})
+                                  <Card key={entry.id}>
+                                    <CardContent className="p-4">
+                                      <p><strong>Date:</strong> {entry.date}</p>
+                                      <p>{entry.description}</p>
+                                      <div className="flex space-x-2 mt-2">
+                                        {entry.attachments && entry.attachments.length > 0 && (
+                                          <Button onClick={() => handleViewAttachments(entry.attachments, entry.description)} className="mt-2">
+                                            <Paperclip className="h-4 w-4 mr-2" />
+                                            View Attachments ({entry.attachments.length})
+                                          </Button>
+                                        )}
+                                        <Button onClick={() => document.getElementById(`add-attachment-${entry.id}`)?.click()} className="mt-2">
+                                          <Plus className="h-4 w-4 mr-2" />
+                                          Add Attachment
                                         </Button>
-                                      )}
-                                      <Button onClick={() => document.getElementById(`add-attachment-${entry.id}`)?.click()} className="mt-2">
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Add Attachment
-                                      </Button>
-                                      <input
-                                        type="file"
-                                        id={`add-attachment-${entry.id}`}
-                                        style={{ display: 'none' }}
-                                        multiple
-                                        onChange={(e) => handleAddAttachments(entry.id, Array.from(e.target.files || []))}
-                                      />
-                                    </div>
-                                  </li>
+                                        <input
+                                          type="file"
+                                          id={`add-attachment-${entry.id}`}
+                                          style={{ display: 'none' }}
+                                          multiple
+                                          onChange={(e) => handleAddAttachments(entry.id, Array.from(e.target.files || []))}
+                                        />
+                                      </div>
+                                    </CardContent>
+                                  </Card>
                                 ))) : (
                                   <p>No history available</p>
                                 )}
-                          </ul>
+                          </div>
                         </CardContent>
                       </Card>
                     </TabsContent>
