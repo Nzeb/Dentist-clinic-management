@@ -43,7 +43,7 @@ export function AttachmentViewer({ attachments, isOpen, onClose }: AttachmentVie
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[85vw] w-[85vw] h-[85vh] flex flex-col p-0">
+      <DialogContent className="max-w-[95vw] w-[95vw] h-[85vh] flex flex-col p-0">
         <DialogHeader className="p-4 border-b">
           <DialogTitle>Attachment Viewer</DialogTitle>
         </DialogHeader>
@@ -99,7 +99,7 @@ export function AttachmentViewer({ attachments, isOpen, onClose }: AttachmentVie
                     </div>
                     <TransformComponent>
                       <img
-                        src={`/api/attachments/${selectedAttachment.fileName}`}
+                        src={`/api/attachments/${selectedAttachment.fileName.replace(/^\/uploads\//, '')}`}
                         alt={selectedAttachment.fileName}
                         className="max-w-full max-h-full object-contain"
                         onLoad={handleImageLoad}
