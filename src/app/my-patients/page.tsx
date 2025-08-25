@@ -14,6 +14,7 @@ import { Search, Plus, Trash, Edit, UserPlus, Paperclip, Calendar, FileText, Bel
 import { Label } from "@/components/ui/label"
 import { DialogFooter } from '@/components/ui/dialog'
 import { AddHistoryEntry } from '../components/AddHistoryEntry'
+import { EditHistoryEntry } from '../components/EditHistoryEntry'
 import { AddPrescription } from '../components/AddPrescription'
 import { SpecialNotes } from '../components/SpecialNotes'
 import ManagementPlan from '../components/ManagementPlan'
@@ -41,6 +42,7 @@ export default function MyPatientsPage() {
   const [isViewerOpen, setIsViewerOpen] = useState(false)
   const [selectedAttachments, setSelectedAttachments] = useState<{ fileName: string; description?: string }[]>([])
   const [viewerDescription, setViewerDescription] = useState('')
+  const [editingHistoryEntry, setEditingHistoryEntry] = useState<DBHistoryEntry | null>(null)
 
   const handleViewAttachments = (attachments: string[], description: string) => {
     setSelectedAttachments(attachments.map(fileName => ({ fileName })));
@@ -76,6 +78,55 @@ export default function MyPatientsPage() {
       }
     } catch (error) {
       console.error('Error adding attachments:', error);
+    }
+  };
+
+  const handleUpdateHistoryEntry = async (entry: { date: string; description: string }) => {
+    if (editingHistoryEntry) {
+      await updateHistoryEntry(editingHistoryEntry.id, entry);
+      setEditingHistoryEntry(null);
+      if (selectedPatient) {
+        const patientHistory = await getPatientHistory(selectedPatient.id);
+        setPatientData(prevData => ({
+            ...prevData!,
+            history: patientHistory,
+        }));
+      }
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentUrl: string) => {
+    if (editingHistoryEntry) {
+      try {
+        const response = await fetch(`/api/history/${editingHistoryEntry.id}/attachments`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ attachmentUrl }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete attachment');
+        }
+
+        // Refresh the history data
+        if (selectedPatient) {
+          const patientHistory = await getPatientHistory(selectedPatient.id);
+          setPatientData(prevData => ({
+              ...prevData!,
+              history: patientHistory,
+          }));
+          const updatedEntry = patientHistory.find(e => e.id === editingHistoryEntry.id);
+          if (updatedEntry) {
+            setEditingHistoryEntry(updatedEntry);
+          } else {
+            setEditingHistoryEntry(null);
+          }
+        }
+      } catch (error) {
+        console.error('Error deleting attachment:', error);
+      }
     }
   };
 
@@ -403,6 +454,10 @@ export default function MyPatientsPage() {
                                           multiple
                                           onChange={(e) => handleAddAttachments(entry.id, Array.from(e.target.files || []))}
                                         />
+                                        <Button onClick={() => setEditingHistoryEntry(entry)} className="mt-2">
+                                          <Edit className="h-4 w-4 mr-2" />
+                                          Edit
+                                        </Button>
                                       </div>
                                     </CardContent>
                                   </Card>
@@ -503,6 +558,20 @@ export default function MyPatientsPage() {
         attachments={selectedAttachments}
         description={viewerDescription}
       />
+      {editingHistoryEntry && (
+        <Dialog open={!!editingHistoryEntry} onOpenChange={(open) => !open && setEditingHistoryEntry(null)}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit History Entry</DialogTitle>
+                </DialogHeader>
+                <EditHistoryEntry
+                    entry={editingHistoryEntry}
+                    onUpdate={handleUpdateHistoryEntry}
+                    onDeleteAttachment={handleDeleteAttachment}
+                />
+            </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }

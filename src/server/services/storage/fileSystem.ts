@@ -30,4 +30,16 @@ export class FileSystemStorageService implements StorageService {
       throw new Error('File not found');
     }
   }
+
+  async delete(fileName: string): Promise<void> {
+    const filePath = path.join(this.uploadDir, fileName);
+    try {
+      await fs.unlink(filePath);
+    } catch (error) {
+      // If the file doesn't exist, we can consider it a success
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw new Error(`Failed to delete file: ${fileName}`);
+      }
+    }
+  }
 }

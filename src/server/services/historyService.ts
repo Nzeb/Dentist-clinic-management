@@ -1,6 +1,7 @@
 // src/server/services/historyService.ts
 import { pool } from '../db/config';
 import { DBHistoryEntry } from '@/types/db';
+import { getStorageService } from './storage';
 
 export class HistoryService {
     async getAllHistory(): Promise<DBHistoryEntry[]> {
@@ -73,6 +74,26 @@ export class HistoryService {
         const result = await pool.query(
             'UPDATE history_entries SET attachments = $1 WHERE id = $2 RETURNING *',
             [updatedAttachments, id]
+        );
+
+        return result.rows[0] || null;
+    }
+
+    async deleteAttachment(historyEntryId: number, attachmentUrl: string): Promise<DBHistoryEntry | null> {
+        const storageService = getStorageService();
+        const entryResult = await pool.query('SELECT * FROM history_entries WHERE id = $1', [historyEntryId]);
+        if (entryResult.rows.length === 0) {
+            return null;
+        }
+
+        const entry = entryResult.rows[0] as DBHistoryEntry;
+        const updatedAttachments = entry.attachments.filter(url => url !== attachmentUrl);
+
+        await storageService.delete(attachmentUrl);
+
+        const result = await pool.query(
+            'UPDATE history_entries SET attachments = $1 WHERE id = $2 RETURNING *',
+            [updatedAttachments, historyEntryId]
         );
 
         return result.rows[0] || null;

@@ -6,6 +6,7 @@ import { Readable } from 'stream';
 export interface StorageService {
   upload(file: Buffer, fileName: string): Promise<string>;
   read(fileName: string): Promise<Readable>;
+  delete(fileName: string): Promise<void>;
 }
 
 export const getStorageService = (): StorageService => {
