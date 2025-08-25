@@ -96,6 +96,18 @@ export interface DBPatient {
   
   export type PrescriptionStatus = 'active' | 'completed' | 'cancelled';
 
+// Lab Report related types
+export interface DBLabReport {
+  id: number;
+  patient_id: number;
+  date: string;
+  title: string;
+  file_type: string;
+  file_url: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
   // Treatment Plan related types
   export interface DBTreatmentPlan {
     id: number;

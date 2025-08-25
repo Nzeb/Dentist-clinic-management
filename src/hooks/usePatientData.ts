@@ -2,24 +2,26 @@
 
 import { useState } from 'react'
 import { useAppContext } from '@/app/contexts/AppContext'
-import { DBHistoryEntry, DBPrescription } from '@/types/db'
+import { DBHistoryEntry, DBPrescription, DBLabReport } from '@/types/db'
 
 export function usePatientData() {
-  const { getPatientHistory, getPatientPrescription } = useAppContext()
+  const { getPatientHistory, getPatientPrescription, getPatientLabReports } = useAppContext()
   const [patientData, setPatientData] = useState<{
     history: DBHistoryEntry[];
     prescriptions: DBPrescription[];
+    labReports: DBLabReport[];
   } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   const fetchPatientData = async (patientId: number) => {
     setIsLoading(true)
     try {
-      const [history, prescriptions] = await Promise.all([
+      const [history, prescriptions, labReports] = await Promise.all([
         getPatientHistory(patientId),
         getPatientPrescription(patientId),
+        getPatientLabReports(patientId),
       ])
-      setPatientData({ history, prescriptions })
+      setPatientData({ history, prescriptions, labReports })
     } catch (error) {
       console.error("Failed to fetch patient data:", error)
       setPatientData(null)

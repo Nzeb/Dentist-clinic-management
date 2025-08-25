@@ -10,7 +10,8 @@ import {
   DBHistoryEntry,
   DBPrescription,
   DBNotification,
-  DBUser
+  DBUser,
+  DBLabReport
 } from '@/types/db';
 
 interface AppContextType {
@@ -55,6 +56,9 @@ interface AppContextType {
   deletePrescription: (id: number) => Promise<boolean>;
   getPatientPrescription: (patientId: number) => Promise<DBPrescription[]>;
 
+  // Lab Report functions
+  getPatientLabReports: (patientId: number) => Promise<DBLabReport[]>;
+
   // Notification functions
   addNotification: (notification: Omit<DBNotification, 'id'>) => Promise<DBNotification>;
   deleteNotification: (id: number) => Promise<boolean>;
@@ -69,6 +73,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [invoices, setInvoices] = useState<DBInvoice[]>([]);
   const [history, setHistory] = useState<DBHistoryEntry[]>([]);
   const [prescriptions, setPrescriptions] = useState<DBPrescription[]>([]);
+  const [labReports, setLabReports] = useState<DBLabReport[]>([]);
   const [notifications, setNotifications] = useState<DBNotification[]>([]);
   const [doctors, setDoctors] = useState<DBUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -403,6 +408,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const getPatientLabReports = async (patientId: number) => {
+    try {
+      const response = await fetch(`/api/patients/${patientId}/lab-reports`);
+      if (!response.ok) throw new Error('Failed to fetch lab reports');
+      const reports = await response.json();
+      setLabReports(reports);
+      return reports;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch lab reports');
+      throw err;
+    }
+  };
+
   // Prescription functions
   const addPrescription = async (prescription: Omit<DBPrescription, 'id'>) => {
     console.log("add prescription function called");
@@ -577,6 +595,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updatePrescription,
       deletePrescription,
       getPatientPrescription,
+      getPatientLabReports,
       addNotification,
       deleteNotification,
     }}>

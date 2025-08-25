@@ -13,7 +13,8 @@ import { AddPrescription } from '../AddPrescription'
 import { SpecialNotes } from '../SpecialNotes'
 import ManagementPlan from '../ManagementPlan'
 import { AttachmentViewer } from '../AttachmentViewer'
-import { DBHistoryEntry, DBPatient, DBPrescription, DBUser } from '@/types/db'
+import { LabReports } from './LabReports'
+import { DBHistoryEntry, DBPatient, DBPrescription, DBUser, DBLabReport } from '@/types/db'
 
 interface PatientDetailsDialogProps {
   patient: DBPatient | null;
@@ -22,6 +23,7 @@ interface PatientDetailsDialogProps {
   patientData: {
     history: DBHistoryEntry[];
     prescriptions: DBPrescription[];
+    labReports: DBLabReport[];
   } | null;
   doctors: DBUser[];
   user: DBUser | null;
@@ -100,6 +102,7 @@ export function PatientDetailsDialog({
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
                 <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
+                <TabsTrigger value="lab-reports">Lab Reports</TabsTrigger>
                 <TabsTrigger value="timeline">Timeline</TabsTrigger>
                 <TabsTrigger value="management-plan">Management Plan</TabsTrigger>
               </TabsList>
@@ -231,6 +234,9 @@ export function PatientDetailsDialog({
                         </ul>
                       </CardContent>
                     </Card>
+                  </TabsContent>
+                  <TabsContent value="lab-reports" className="h-full">
+                    <LabReports patientId={patient.id} reports={patientData?.labReports || []} />
                   </TabsContent>
                   <TabsContent value="timeline" className="h-full">
                     <Card className="h-full">
