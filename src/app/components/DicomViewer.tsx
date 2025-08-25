@@ -8,30 +8,37 @@ import dicomParser from 'dicom-parser';
 import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, Move, Sun, Wind } from 'lucide-react';
 
-// Initialize Cornerstone Tools
-try {
-  cornerstoneTools.external.cornerstone = cornerstone;
-  cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
-  cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
-  cornerstoneTools.init({
-    showSVGCursors: true,
-  });
-  cornerstoneWADOImageLoader.webWorkerManager.initialize({
-    maxWebWorkers: navigator.hardwareConcurrency || 1,
-    startWebWorkersOnDemand: true,
-    webWorkerPath: '/cornerstoneWADOImageLoaderWebWorker.js',
-    webWorkerTaskPaths: [],
-    taskConfiguration: {
-      decodeTask: {
-        initializeCodecsOnStartup: false,
-        usePDFJS: false,
-        strict: false,
+let initialized = false;
+const initializeCornerstone = () => {
+  if (initialized) {
+    return;
+  }
+
+  try {
+    cornerstoneTools.external.cornerstone = cornerstone;
+    cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+    cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
+    cornerstoneTools.init({
+      showSVGCursors: true,
+    });
+    cornerstoneWADOImageLoader.webWorkerManager.initialize({
+      maxWebWorkers: navigator.hardwareConcurrency || 1,
+      startWebWorkersOnDemand: true,
+      webWorkerPath: '/cornerstoneWADOImageLoaderWebWorker.js',
+      webWorkerTaskPaths: [],
+      taskConfiguration: {
+        decodeTask: {
+          initializeCodecsOnStartup: false,
+          usePDFJS: false,
+          strict: false,
+        },
       },
-    },
-  });
-} catch (error) {
-  console.error("Failed to initialize Cornerstone", error);
-}
+    });
+    initialized = true;
+  } catch (error) {
+    console.error("Failed to initialize Cornerstone", error);
+  }
+};
 
 
 interface DicomViewerProps {
@@ -43,6 +50,7 @@ const DicomViewer: React.FC<DicomViewerProps> = ({ file }) => {
   const [imageId, setImageId] = useState<string | null>(null);
 
   useEffect(() => {
+    initializeCornerstone();
     if (file && elementRef.current) {
       const element = elementRef.current;
       cornerstone.enable(element);
