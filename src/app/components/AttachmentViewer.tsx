@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -8,6 +9,11 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChevronLeft, ChevronRight, Search, Plus, Minus, RefreshCw, X } from 'lucide-react'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { cn } from '@/lib/utils'
+
+const DicomViewer = dynamic(() => import('./DicomViewer'), {
+  ssr: false,
+  suspense: true,
+});
 
 interface Attachment {
   fileName: string
@@ -97,32 +103,38 @@ export function AttachmentViewer({ attachments, isOpen, onClose, description }: 
               </div>
             )}
             {selectedAttachment && (
-              <TransformWrapper>
-                {({ zoomIn, zoomOut, resetTransform }) => (
-                  <>
-                    <div className="absolute top-2 right-2 z-10 flex items-center space-x-2">
-                      <Button variant="outline" size="icon" onClick={() => zoomIn()}>
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" onClick={() => zoomOut()}>
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" onClick={() => resetTransform()}>
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <TransformComponent>
-                      <img
-                        src={`/api/attachments/${finalFileName}`}
-                        alt={finalFileName}
-                        className="max-w-full max-h-full object-contain"
-                        onLoad={handleImageLoad}
-                        onError={() => setIsLoading(false)}
-                      />
-                    </TransformComponent>
-                  </>
-                )}
-              </TransformWrapper>
+              finalFileName.toLowerCase().endsWith('.dcm') ? (
+                <Suspense fallback={<div>Loading DICOM Viewer...</div>}>
+                  <DicomViewer file={`/api/attachments/${finalFileName}`} />
+                </Suspense>
+              ) : (
+                <TransformWrapper>
+                  {({ zoomIn, zoomOut, resetTransform }) => (
+                    <>
+                      <div className="absolute top-2 right-2 z-10 flex items-center space-x-2">
+                        <Button variant="outline" size="icon" onClick={() => zoomIn()}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="icon" onClick={() => zoomOut()}>
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="icon" onClick={() => resetTransform()}>
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <TransformComponent>
+                        <img
+                          src={`/api/attachments/${finalFileName}`}
+                          alt={finalFileName}
+                          className="max-w-full max-h-full object-contain"
+                          onLoad={handleImageLoad}
+                          onError={() => setIsLoading(false)}
+                        />
+                      </TransformComponent>
+                    </>
+                  )}
+                </TransformWrapper>
+              )
             )}
           </div>
 
