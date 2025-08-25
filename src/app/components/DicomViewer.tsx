@@ -15,12 +15,12 @@ const initializeCornerstone = () => {
   }
 
   try {
-    cornerstoneTools.external.cornerstone = cornerstone;
-    cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
-    cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
     cornerstoneTools.init({
       showSVGCursors: true,
     });
+    cornerstoneTools.external.cornerstone = cornerstone;
+    cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+    cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
     cornerstoneWADOImageLoader.webWorkerManager.initialize({
       maxWebWorkers: navigator.hardwareConcurrency || 1,
       startWebWorkersOnDemand: true,
