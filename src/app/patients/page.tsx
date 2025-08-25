@@ -13,9 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { UserPlus, Search, Plus, Trash, Edit, Paperclip, Calendar, FileText, Bell, Printer, ChevronDown } from 'lucide-react'
 import { AddHistoryEntry } from '../components/AddHistoryEntry'
+import { EditHistoryEntry } from '../components/EditHistoryEntry'
 import { AddPrescription } from '../components/AddPrescription'
 import { SpecialNotes } from '../components/SpecialNotes'
 import ManagementPlan from '../components/ManagementPlan'
+import { AttachmentViewer } from '../components/AttachmentViewer'
 import { Label } from "@/components/ui/label"
 import { DBHistoryEntry, DBPatient, DBPrescription } from '@/types/db'
 import { set } from 'react-hook-form'
@@ -38,6 +40,16 @@ export default function PatientsPage() {
   const [filterCriteria, setFilterCriteria] = useState<'all' | 'recent' | 'overdue'>('all')
   const [addPatientDialogOpen, setAddPatientDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isViewerOpen, setIsViewerOpen] = useState(false)
+  const [selectedAttachments, setSelectedAttachments] = useState<{ fileName: string; description?: string }[]>([])
+  const [viewerDescription, setViewerDescription] = useState('')
+  const [editingHistoryEntry, setEditingHistoryEntry] = useState<DBHistoryEntry | null>(null)
+
+  const handleViewAttachments = (attachments: string[], description: string) => {
+    setSelectedAttachments(attachments.map(fileName => ({ fileName })));
+    setViewerDescription(description);
+    setIsViewerOpen(true);
+  };
 
   // console.log("Doctors: ", doctors);
 
@@ -131,6 +143,86 @@ export default function PatientsPage() {
       }
     }
   }
+
+  const handleUpdateHistoryEntry = async (entry: { date: string; description: string }) => {
+    if (editingHistoryEntry) {
+      await updateHistoryEntry(editingHistoryEntry.id, entry);
+      setEditingHistoryEntry(null);
+      if (selectedPatient) {
+        const patientHistory = await getPatientHistory(selectedPatient.id);
+        setPatientData(prevData => ({
+            ...prevData!,
+            history: patientHistory,
+        }));
+      }
+    }
+  };
+
+  const handleAddAttachments = async (historyId: number, files: File[]) => {
+    if (files.length === 0) return;
+
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('attachments', file);
+    });
+
+    try {
+      const response = await fetch(`/api/history/${historyId}/attachments`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add attachments');
+      }
+
+      // Refresh the history data
+      if (selectedPatient) {
+        const patientHistory = await getPatientHistory(selectedPatient.id);
+        setPatientData(prevData => ({
+            ...prevData!,
+            history: patientHistory,
+        }));
+      }
+    } catch (error) {
+      console.error('Error adding attachments:', error);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentUrl: string) => {
+    if (editingHistoryEntry) {
+      try {
+        const response = await fetch(`/api/history/${editingHistoryEntry.id}/attachments`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ attachmentUrl }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete attachment');
+        }
+
+        // Refresh the history data
+        if (selectedPatient) {
+          const patientHistory = await getPatientHistory(selectedPatient.id);
+          setPatientData(prevData => ({
+              ...prevData!,
+              history: patientHistory,
+          }));
+          const updatedEntry = patientHistory.find(e => e.id === editingHistoryEntry.id);
+          if (updatedEntry) {
+            setEditingHistoryEntry(updatedEntry);
+          } else {
+            setEditingHistoryEntry(null);
+          }
+        }
+      } catch (error) {
+        console.error('Error deleting attachment:', error);
+      }
+    }
+  };
 
   const handleAddPrescription = async (prescription: { date: string; medication: string; dosage: string; instructions: string; renewalDate: string }) => {
     if (selectedPatient) {
@@ -443,34 +535,43 @@ export default function PatientsPage() {
                               </CollapsibleContent>
                             </Collapsible>
                           )}
-                          <ul className="space-y-4 mt-4">
+                          <div className="space-y-4 mt-4">
                             {patientData?.history && patientData.history.length > 0 ? (
                               patientData.history.filter(entry => entry.patient_id === selectedPatient.id)
                                 .map(entry => (
-                                  <li key={entry.id} className="border-b pb-2">
-                                    <p><strong>Date:</strong> {entry.date}</p>
-                                    <p>{entry.description}</p>
-                                    {entry.attachments.length > 0 && (
-                                      <div className="flex items-center mt-2">
-                                        <Paperclip className="h-4 w-4 mr-2" />
-                                        <span>{entry.attachments.length} attachment(s)</span>
-                                      </div>     )}                           
-                                      <div className="mt-2">
-                                        {entry.attachments.map((attachment, index) => (
-                                         <div key={index} className="flex items-center mt-1">
-                                           <a href={attachment} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">
-                                             { `Attachment ${index + 1}`}
-                                           </a>
-                                       </div>
-                                       ))}
+                                  <Card key={entry.id}>
+                                    <CardContent className="p-4">
+                                      <p><strong>Date:</strong> {entry.date}</p>
+                                      <p>{entry.description}</p>
+                                      <div className="flex space-x-2 mt-2">
+                                        {entry.attachments && entry.attachments.length > 0 && (
+                                          <Button onClick={() => handleViewAttachments(entry.attachments, entry.description)} className="mt-2">
+                                            <Paperclip className="h-4 w-4 mr-2" />
+                                            View Attachments ({entry.attachments.length})
+                                          </Button>
+                                        )}
+                                        <Button onClick={() => document.getElementById(`add-attachment-${entry.id}`)?.click()} className="mt-2">
+                                          <Plus className="h-4 w-4 mr-2" />
+                                          Add Attachment
+                                        </Button>
+                                        <input
+                                          type="file"
+                                          id={`add-attachment-${entry.id}`}
+                                          style={{ display: 'none' }}
+                                          multiple
+                                          onChange={(e) => handleAddAttachments(entry.id, Array.from(e.target.files || []))}
+                                        />
+                                        <Button onClick={() => setEditingHistoryEntry(entry)} className="mt-2">
+                                          <Edit className="h-4 w-4 mr-2" />
+                                          Edit
+                                        </Button>
                                       </div>
-
-                                   
-                                  </li>
+                                    </CardContent>
+                                  </Card>
                                 ))) : (
-                                  <p>No prescriptions available</p>
+                                  <p>No history available</p>
                                 )}
-                          </ul>
+                          </div>
                         </CardContent>
                       </Card>
                     </TabsContent>
@@ -580,6 +681,26 @@ export default function PatientsPage() {
               </Tabs>
             </div>
           </DialogContent>
+        </Dialog>
+      )}
+      <AttachmentViewer
+        isOpen={isViewerOpen}
+        onClose={() => setIsViewerOpen(false)}
+        attachments={selectedAttachments}
+        description={viewerDescription}
+      />
+      {editingHistoryEntry && (
+        <Dialog open={!!editingHistoryEntry} onOpenChange={(open) => !open && setEditingHistoryEntry(null)}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit History Entry</DialogTitle>
+                </DialogHeader>
+                <EditHistoryEntry
+                    entry={editingHistoryEntry}
+                    onUpdate={handleUpdateHistoryEntry}
+                    onDeleteAttachment={handleDeleteAttachment}
+                />
+            </DialogContent>
         </Dialog>
       )}
     </div>
