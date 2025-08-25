@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -9,7 +10,10 @@ import { ChevronLeft, ChevronRight, Search, Plus, Minus, RefreshCw, X } from 'lu
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { cn } from '@/lib/utils'
 
-const DicomViewer = lazy(() => import('./DicomViewer'));
+const DicomViewer = dynamic(() => import('./DicomViewer'), {
+  ssr: false,
+  suspense: true,
+});
 
 interface Attachment {
   fileName: string
