@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: '.env.local' });
 require('ts-node').register();
 const { pool } = require('./src/server/db/config.ts');
 const bcrypt = require('bcryptjs');
