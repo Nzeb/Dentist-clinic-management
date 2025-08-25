@@ -31,4 +31,10 @@ export class AzureBlobStorageService implements StorageService {
     }
     return downloadBlockBlobResponse.readableStreamBody as Readable;
   }
+
+  async delete(fileName: string): Promise<void> {
+    const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
+    const blockBlobClient = containerClient.getBlockBlobClient(fileName);
+    await blockBlobClient.deleteIfExists();
+  }
 }
