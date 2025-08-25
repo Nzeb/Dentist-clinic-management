@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getLabReportsByPatientId, addLabReport, deleteLabReport } from '@/server/services/labReportService';
-import { uploadFile } from '@/server/services/storage/azure';
+import { AzureBlobStorageService } from '@/server/services/storage/azure';
+
+const storageService = new AzureBlobStorageService();
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
     try {
@@ -26,7 +28,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         }
 
         const fileType = file.type;
-        const fileUrl = await uploadFile(file, file.name);
+        const fileBuffer = Buffer.from(await file.arrayBuffer());
+        const fileName = `${patientId}-${Date.now()}-${file.name}`;
+        await storageService.upload(fileBuffer, fileName);
+        const fileUrl = `${process.env.AZURE_STORAGE_URL}/${process.env.AZURE_STORAGE_CONTAINER_NAME}/${fileName}`;
 
         const newReport = await addLabReport(patientId, title, date, fileType, fileUrl);
         return NextResponse.json(newReport, { status: 201 });

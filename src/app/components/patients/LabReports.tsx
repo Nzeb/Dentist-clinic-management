@@ -7,7 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Download, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { AttachmentViewer } from '../AttachmentViewer';
-import { DicomViewer } from '../DicomViewer';
+import dynamic from 'next/dynamic';
+
+const DicomViewer = dynamic(() => import('../DicomViewer'), { ssr: false });
 
 interface LabReportsProps {
   patientId: number;
