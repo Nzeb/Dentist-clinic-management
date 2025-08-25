@@ -353,7 +353,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateHistoryEntry = async (id: number, entry: Partial<DBHistoryEntry>) => {
     try {
       const response = await fetch(`/api/history/${id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry),
       });

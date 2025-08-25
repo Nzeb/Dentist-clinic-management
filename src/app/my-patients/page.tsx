@@ -85,6 +85,13 @@ export default function MyPatientsPage() {
     if (editingHistoryEntry) {
       await updateHistoryEntry(editingHistoryEntry.id, entry);
       setEditingHistoryEntry(null);
+      if (selectedPatient) {
+        const patientHistory = await getPatientHistory(selectedPatient.id);
+        setPatientData(prevData => ({
+            ...prevData!,
+            history: patientHistory,
+        }));
+      }
     }
   };
 
