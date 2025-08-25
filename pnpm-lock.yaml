@@ -122,6 +122,9 @@ importers:
       cornerstone-core:
         specifier: ^2.6.1
         version: 2.6.1
+      cornerstone-math:
+        specifier: ^0.1.10
+        version: 0.1.10
       cornerstone-tools:
         specifier: ^6.0.10
         version: 6.0.10(cornerstone-core@2.6.1)

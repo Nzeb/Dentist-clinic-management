@@ -6,6 +6,7 @@ import cornerstoneTools from 'cornerstone-tools';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 import dicomParser from 'dicom-parser';
 import Hammer from 'hammerjs';
+import cornerstoneMath from 'cornerstone-math';
 import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, Move, Sun, Wind } from 'lucide-react';
 
@@ -18,6 +19,7 @@ const initializeCornerstone = () => {
   try {
     cornerstoneTools.external.cornerstone = cornerstone;
     cornerstoneTools.external.Hammer = Hammer;
+    cornerstoneTools.external.cornerstoneMath = cornerstoneMath;
     cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
     cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
     cornerstoneTools.init({
